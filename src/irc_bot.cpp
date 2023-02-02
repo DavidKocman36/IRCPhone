@@ -138,6 +138,7 @@ int main(int argc, char *argv[]){
     irc_bot bot;
     irc_bot_core core;
     core.core_create();
+    cout << "vytvořeno" << endl;
 
     bot.server = argv[1];
     bot.channel = argv[2];
