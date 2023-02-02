@@ -1,5 +1,4 @@
 #include "irc_bot.h"
-#include "irc_bot_core.h"
 
 irc_bot::irc_bot()
 {
@@ -222,6 +221,7 @@ int main(int argc, char *argv[]){
             if(std::find(messages.begin(), messages.end(), "ERROR") != messages.end()) 
             {
                 //dealloc if needed
+                core.core_destroy();
                 return 0;
             }
 

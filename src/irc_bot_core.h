@@ -9,7 +9,7 @@ using namespace std;
 class irc_bot_core
 {
 public:
-    LinphoneCoreVTable vTable = {0};
+    LinphoneCoreVTable vTable = {0}; //might not be needed
     LinphoneFactory *_factory;
     LinphoneCore *_core;
     irc_bot_core();

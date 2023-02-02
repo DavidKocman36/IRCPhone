@@ -11,6 +11,8 @@
     #include <vector>
 
     #include "my_string.cpp"
+    #include "irc_bot_core.h"
+    #include "irc_bot_call.h"
 
     #include "linphone++/linphone.hh"
     #include <linphone/linphonecore.h>

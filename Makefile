@@ -3,7 +3,7 @@ CFLAGS  = -std=c++2a -g -I$(current_dir)/linphone-sdk/build/linphone-sdk/desktop
 
 TARGET = src/irc_bot
 TARGET_OUT = irc_bot
-OBJECT_FILES = src/irc_bot_core.cpp
+OBJECT_FILES = src/irc_bot_core.cpp src/irc_bot_call.cpp
 
 current_dir = $(shell pwd)
 
