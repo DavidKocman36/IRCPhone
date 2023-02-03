@@ -9,8 +9,6 @@ void irc_bot::send_com(string command)
     send(sockfd, command.c_str(), command.size(), 0);
 }
 
-/* Udelat callback funkci call state changed !!!! */
-
 //metoda pro volani adresaroveho API
 void address_book()
 {
@@ -28,7 +26,7 @@ void address_book()
 /* mozne zpravy pri volani: PING, call, call (pro hold), hangup ,accept, decline, adresarove fce  */
 /* bude volana v hlavnim loopu callu po Iterate funkci */
 
-int irc_bot::check_messages_during_call()
+int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core)
 {
     vector<string> messages;
     string msg;
@@ -52,7 +50,6 @@ int irc_bot::check_messages_during_call()
         }
         if(messages[1] == "PRIVMSG")
         {
-            //TODO: Integrace liblinphone knihovny
             //jako prvni zkusit implementovat odvhozi hovory
             vector<string> aux;
             split(messages[0], "!", aux);
@@ -107,8 +104,23 @@ int irc_bot::check_messages_during_call()
             {
                 string msg = "PRIVMSG " + user_nick + " :Hanging up!\r\n"; /*TODO: treba vypsat jaky hovor, nebo vsechny*/
                 send_com(msg);
+                call->call_terminate();
+
                 return 1;
                 /* hangup */
+            }
+            else if(command == ":cancel")
+            {
+                string msg = "PRIVMSG " + user_nick + " :cancelling call to: " + outgoingCallee + "\r\n";
+                outgoingCallee.clear();
+                /**
+                 * Zde podminka ze pokud bude ve state Init/Ringing/Progress/EarlyMedia
+                 * tak může být hovor zrušen
+                */
+                call->call_terminate();
+                send_com(msg);
+                /* cancel outgoing call */
+                return 1;
             }
             else{
                 string msg = "PRIVMSG " + user_nick + " :Unknown command z callu!\r\n";
@@ -123,6 +135,39 @@ int irc_bot::check_messages_during_call()
     return 0;
 }
 
+/* TODO: Dodelat callbacks na CONNECTED, OUTGOING a INCOMING */
+static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState cstate, const char *msg){
+	switch(cstate){
+        case LinphoneCallStateOutgoingInit:
+            printf("Started the call!\n");
+            break;
+		case LinphoneCallOutgoingRinging:
+			printf("It is now ringing remotely !\n");
+		break;
+		case LinphoneCallOutgoingEarlyMedia:
+			printf("Receiving some early media\n");
+		break;
+		case LinphoneCallConnected:
+			printf("We are connected !\n");
+		break;
+		case LinphoneCallStreamsRunning:
+			printf("Media streams established !\n");
+		break;
+		case LinphoneCallEnd:
+			printf("Call is terminated.\n");
+		break;
+		case LinphoneCallError:
+			printf("Call failure !");
+            break;
+        case LinphoneCallReleased:
+            printf("Call is released!");
+		break;
+		default:
+			printf("Unhandled notification %i\n",cstate);
+	}
+}
+
+
 int main(int argc, char *argv[]){
 
     // ./irc_bot {ip} {channel} {user} {password} | [port]
@@ -136,8 +181,11 @@ int main(int argc, char *argv[]){
 
     irc_bot bot;
     irc_bot_core core;
+    irc_bot_call call;
+
     core.core_create();
-    cout << "vytvořeno" << endl;
+    linphone_core_cbs_set_call_state_changed(core._cbs, call_state_changed);
+    linphone_core_add_callbacks(core._core, core._cbs);
 
     bot.server = argv[1];
     bot.channel = argv[2];
@@ -207,7 +255,7 @@ int main(int argc, char *argv[]){
         if(bytes_recieved > 0)
         {
             msg = string(buffer, 0, bytes_recieved);
-            cout << msg;
+            //cout << msg;
 
             // trim of the "\r\n" for better command handling
             msg.resize(msg.length() - 2);
@@ -250,6 +298,7 @@ int main(int argc, char *argv[]){
                  * Config a FactoryConfig
                  * 
                 */
+                cout << msg << endl; 
                 vector<string> aux;
                 split(messages[0], "!", aux);
                 string correct_nick = ":" + bot.user_nick;
@@ -271,22 +320,39 @@ int main(int argc, char *argv[]){
                 }
                 else if(command == ":call") /*call sip:aaaa@aah.cz*/
                 {
-                    string msg = "PRIVMSG " + bot.user_nick + " :call\r\n";
+                    //TODO: check pokud byla zadána i adresa
+                    if(messages.size() < 5)
+                    {
+                        cout << "No sip uri provided!" << endl;
+                        continue;
+                    }
+                    if(messages.size() > 5)
+                    {
+                        cout << "Wrong usage!" << endl;
+                        continue;
+                    }
+                    string uri = messages[4];
+                    
+                    string msg = "PRIVMSG " + bot.user_nick + " :calling " + uri + "\r\n";
+
                     bot.send_com(msg);
                     /* call */
-                    /* zmena state na odchozi hovor -> metoda invite */
-                    /* vstup do loopu s hovorem */
-                    /* NAT routing v configs! */
+                    /* NAT routing v configs! - asi done? */
+                    call.call_invite(core._core, uri);
+                    bot.outgoingCallee = uri;
                     int ret = -1;
-                    while (42)
+
+                    cout << "VSTUPUJU DO LOOPU" << endl;
+                    while (!(linphone_call_get_state(call._call) == LinphoneCallReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateEnd) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
                     {
-                        /* funkce na call -> iterate */
-                        ret = bot.check_messages_during_call();
+                        core.iterate();
+                        ret = bot.check_messages_during_call(&call, &core);
                         if(ret == 1)
                         {
                             break;
                         }
                     }
+                    cout << "VYSTUPUJU Z LOOPU" << endl;
                     
                 }
                 else if(command == ":register")
@@ -328,9 +394,6 @@ int main(int argc, char *argv[]){
             
             messages.clear();
         }
-        /* TODO: sledovani incoming hovoru */
-        /* sledovat state jestli prisel call -> jen snadný check ze state IncomingReceived (?) */
-        /* tady se vypise "user is calling" */
     }
 
     return 0;

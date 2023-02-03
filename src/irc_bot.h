@@ -15,9 +15,7 @@
     #include "irc_bot_call.h"
 
     #include "linphone++/linphone.hh"
-    #include <linphone/linphonecore.h>
-    #include <linphone/conference.h>
-    
+    #include <linphone/linphonecore.h>    
     
     using namespace std;
 
@@ -30,11 +28,12 @@
         string user_nick;
         string password;
         string nick;
+        string outgoingCallee;
         int sockfd;
 
         //send command method
         void send_com(string command);
-        int check_messages_during_call();
+        int check_messages_during_call(irc_bot_call *call, irc_bot_core *core);
 
         irc_bot();
     };

@@ -10,4 +10,10 @@ cmake --build . --parallel 9
 
 Later on it is HIGHLY reccomneded, even mandatory, to add an include path to g++ build. It is in the makefile but if you are not using mine, this tip might be helpful.
 
+install liblinphone10 if the file is not found!
+
+mkdir if start core throws an exception!
+
+Have to be started with root privileges!
+
 

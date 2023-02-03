@@ -12,7 +12,7 @@ irc_bot_core::~irc_bot_core()
 
 void irc_bot_core::core_create()
 {
-    this->_core = linphone_factory_create_core_3(this->_factory, nullptr, nullptr, nullptr);
+    this->_core = linphone_factory_create_core_3(this->_factory, "./conf/linphonerc", nullptr, nullptr);
     if(this->_core == nullptr)
     {
         cout << "An error creating core occured!" << endl;
@@ -22,7 +22,12 @@ void irc_bot_core::core_create()
         cout << err << endl;
         cout << "An error starting core occured!" << endl;
     }
-
+    this->_cbs = linphone_factory_create_core_cbs(this->_factory);
+    if(this->_cbs == nullptr)
+    {
+        cout << "An creating core callbacks occured!" << endl;
+    }
+    cout << "Core successfully created!" << endl;
     //create core cbs
 }
 

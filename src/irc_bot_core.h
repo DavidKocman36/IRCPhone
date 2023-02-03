@@ -12,6 +12,7 @@ public:
     LinphoneCoreVTable vTable = {0}; //might not be needed
     LinphoneFactory *_factory;
     LinphoneCore *_core;
+    LinphoneCoreCbs *_cbs;
     irc_bot_core();
     ~irc_bot_core();
     void core_create();
