@@ -1,4 +1,5 @@
 #include "irc_bot.h"
+#include <unistd.h>
 
 irc_bot::irc_bot()
 {
@@ -135,37 +136,7 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core)
     return 0;
 }
 
-/* TODO: Dodelat callbacks na CONNECTED, OUTGOING a INCOMING */
-static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState cstate, const char *msg){
-	switch(cstate){
-        case LinphoneCallStateOutgoingInit:
-            printf("Started the call!\n");
-            break;
-		case LinphoneCallOutgoingRinging:
-			printf("It is now ringing remotely !\n");
-		break;
-		case LinphoneCallOutgoingEarlyMedia:
-			printf("Receiving some early media\n");
-		break;
-		case LinphoneCallConnected:
-			printf("We are connected !\n");
-		break;
-		case LinphoneCallStreamsRunning:
-			printf("Media streams established !\n");
-		break;
-		case LinphoneCallEnd:
-			printf("Call is terminated.\n");
-		break;
-		case LinphoneCallError:
-			printf("Call failure !");
-            break;
-        case LinphoneCallReleased:
-            printf("Call is released!");
-		break;
-		default:
-			printf("Unhandled notification %i\n",cstate);
-	}
-}
+
 
 
 int main(int argc, char *argv[]){
@@ -184,8 +155,11 @@ int main(int argc, char *argv[]){
     irc_bot_call call;
 
     core.core_create();
-    linphone_core_cbs_set_call_state_changed(core._cbs, call_state_changed);
-    linphone_core_add_callbacks(core._core, core._cbs);
+    linphone_core_set_log_file(NULL);
+	linphone_core_set_log_level(ORTP_MESSAGE);
+    linphone_core_enable_adaptive_rate_control(core._core, true);
+    linphone_core_enable_mic(core._core, true);
+    linphone_core_set_audio_port_range(core._core, 7077, 7079);
 
     bot.server = argv[1];
     bot.channel = argv[2];
@@ -214,7 +188,7 @@ int main(int argc, char *argv[]){
     }
     struct timeval timeout;      
     timeout.tv_sec = 0;
-    timeout.tv_usec = 20000;
+    timeout.tv_usec = 50000;
     
     if (setsockopt (bot.sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout) < 0)
     {
@@ -251,6 +225,7 @@ int main(int argc, char *argv[]){
 
     while(42)
     {
+        //core.iterate();
         bytes_recieved = recv(bot.sockfd, buffer, 4096, 0);
         if(bytes_recieved > 0)
         {
@@ -332,6 +307,7 @@ int main(int argc, char *argv[]){
                         continue;
                     }
                     string uri = messages[4];
+                    //TODO: Udelat check jestli je user zaregistrovany!
                     
                     string msg = "PRIVMSG " + bot.user_nick + " :calling " + uri + "\r\n";
 
@@ -341,11 +317,15 @@ int main(int argc, char *argv[]){
                     call.call_invite(core._core, uri);
                     bot.outgoingCallee = uri;
                     int ret = -1;
-
+                    linphone_call_set_speaker_muted(call._call, false);
+                    linphone_call_set_microphone_muted(call._call, false);
                     cout << "VSTUPUJU DO LOOPU" << endl;
+
+                    //TODO: State 18 ze by?
                     while (!(linphone_call_get_state(call._call) == LinphoneCallReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateEnd) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
                     {
                         core.iterate();
+                        //usleep(50000);
                         ret = bot.check_messages_during_call(&call, &core);
                         if(ret == 1)
                         {
@@ -353,12 +333,43 @@ int main(int argc, char *argv[]){
                         }
                     }
                     cout << "VYSTUPUJU Z LOOPU" << endl;
+
+                    //if (call == null) -> terminated!
+                    //cout << "STATE: " << linphone_call_get_state(call._call) << endl;
                     
                 }
                 else if(command == ":register")
                 {
+                    if(messages.size() != 6)
+                    {
+                        cout << "Wrong usage!" << endl;
+                        continue;
+                    }
                     string msg = "PRIVMSG " + bot.user_nick + " :register\r\n";
                     bot.send_com(msg);
+
+                    irc_bot_proxy proxy(messages[4], messages[5]);
+                    //cout << messages[4] << endl;
+                    //cout << proxy.user << endl;
+                    //cout << proxy.passw << endl;
+                    //cout << "AAAAA" << endl;
+
+                    proxy.bot_register(core._core);
+
+                    while((linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationOk)){
+                        core.iterate();
+                        usleep(20000);
+                    }
+                    
+                    if(linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationOk)
+                    {
+                        cout << "Succesfully registered!" << endl;
+                    }
+                    else
+                    {
+                        cout << "Registration failed!" << endl;
+                    }
+
                     /* register */
                 }
                 else if(command == ":unregister")
