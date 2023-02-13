@@ -18,9 +18,6 @@ public:
     //actual call
     LinphoneCall *_call;
 
-    //outgoing call -> might not need
-    LinphoneCall *_outgoingCall;
-
     vector<LinphoneCall *> _calls; 
 
     irc_bot_call();

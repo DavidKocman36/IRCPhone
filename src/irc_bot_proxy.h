@@ -19,11 +19,12 @@ public:
     LinphoneAddress *from;
     LinphoneAuthInfo *info;
 
-    irc_bot_proxy(string &user, string &passw);
+    irc_bot_proxy();
     ~irc_bot_proxy();
 
     void bot_register(LinphoneCore *lc);
     void bot_unregister(LinphoneCore *lc);
+    void set_credentials(string &user, string &passw);
 };
 
 #endif

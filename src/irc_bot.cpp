@@ -136,9 +136,6 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core)
     return 0;
 }
 
-
-
-
 int main(int argc, char *argv[]){
 
     // ./irc_bot {ip} {channel} {user} {password} | [port]
@@ -153,10 +150,12 @@ int main(int argc, char *argv[]){
     irc_bot bot;
     irc_bot_core core;
     irc_bot_call call;
+    irc_bot_proxy proxy;
 
     core.core_create();
     linphone_core_set_log_file(NULL);
 	linphone_core_set_log_level(ORTP_MESSAGE);
+
     linphone_core_enable_adaptive_rate_control(core._core, true);
     linphone_core_enable_mic(core._core, true);
     linphone_core_set_audio_port_range(core._core, 7077, 7079);
@@ -225,7 +224,7 @@ int main(int argc, char *argv[]){
 
     while(42)
     {
-        //core.iterate();
+        core.iterate();
         bytes_recieved = recv(bot.sockfd, buffer, 4096, 0);
         if(bytes_recieved > 0)
         {
@@ -258,11 +257,9 @@ int main(int argc, char *argv[]){
                 
                 //jako prvni zkusit implementovat odvhozi hovory
 
-                /* V HLAVNICH LOOPECH HOVORŮ MUSIM MIT SWITCH NA RUZNE STATES */
                 /* zacatek - prubeh - konec */
 
                 /* vytvorit si vektor hovoru, diky kterym budu moct acceptovat a rozlisovat hovory */
-                /* bude jeste temporátní call objekt do kterého příjde právě odchozí hovor, aby mohl být lehce zrušen */
 
                 /** 
                  * TODO
@@ -289,6 +286,24 @@ int main(int argc, char *argv[]){
                     string msg = "PRIVMSG " + bot.user_nick + " :Bot is ending, bye!\r\n";
                     bot.send_com(msg);
 
+                    if(proxy.proxy_cfg != nullptr && linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationOk)
+                    {
+                        proxy.bot_unregister(core._core);
+                        while((linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationCleared)){
+                            core.iterate();
+                            usleep(20000);
+                        }
+                        
+                        if(linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationCleared)
+                        {
+                            cout << "Succesfully unregistered!" << endl;
+                        }
+                        else
+                        {
+                            cout << "Unegistration failed!" << endl;
+                        }
+                    }
+                    
                     core.core_destroy();
                     //dealloc if needed
                     return 0;
@@ -312,20 +327,17 @@ int main(int argc, char *argv[]){
                     string msg = "PRIVMSG " + bot.user_nick + " :calling " + uri + "\r\n";
 
                     bot.send_com(msg);
-                    /* call */
-                    /* NAT routing v configs! - asi done? */
+                    /* NAT routing v configs! */
                     call.call_invite(core._core, uri);
                     bot.outgoingCallee = uri;
                     int ret = -1;
-                    linphone_call_set_speaker_muted(call._call, false);
-                    linphone_call_set_microphone_muted(call._call, false);
-                    cout << "VSTUPUJU DO LOOPU" << endl;
+                    
+                    //linphone_call_set_microphone_muted(call._call, false);
 
-                    //TODO: State 18 ze by?
+                    cout << "VSTUPUJU DO LOOPU" << endl;
                     while (!(linphone_call_get_state(call._call) == LinphoneCallReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateEnd) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
                     {
                         core.iterate();
-                        //usleep(50000);
                         ret = bot.check_messages_during_call(&call, &core);
                         if(ret == 1)
                         {
@@ -334,9 +346,6 @@ int main(int argc, char *argv[]){
                     }
                     cout << "VYSTUPUJU Z LOOPU" << endl;
 
-                    //if (call == null) -> terminated!
-                    //cout << "STATE: " << linphone_call_get_state(call._call) << endl;
-                    
                 }
                 else if(command == ":register")
                 {
@@ -348,11 +357,9 @@ int main(int argc, char *argv[]){
                     string msg = "PRIVMSG " + bot.user_nick + " :register\r\n";
                     bot.send_com(msg);
 
-                    irc_bot_proxy proxy(messages[4], messages[5]);
-                    //cout << messages[4] << endl;
-                    //cout << proxy.user << endl;
-                    //cout << proxy.passw << endl;
-                    //cout << "AAAAA" << endl;
+                    /* TODO: check if already registered! */
+
+                    proxy.set_credentials(messages[4], messages[5]);
 
                     proxy.bot_register(core._core);
 
@@ -370,13 +377,60 @@ int main(int argc, char *argv[]){
                         cout << "Registration failed!" << endl;
                     }
 
-                    /* register */
                 }
                 else if(command == ":unregister")
                 {
                     string msg = "PRIVMSG " + bot.user_nick + " :unregister\r\n";
                     bot.send_com(msg);
-                    /* unregister */
+
+                    if(proxy.proxy_cfg == nullptr)
+                    {
+                        cout << "Not registered!" << endl;
+                        messages.clear();
+                        continue;
+                    }
+                    if(linphone_proxy_config_get_state(proxy.proxy_cfg) != LinphoneRegistrationOk)
+                    {
+                        cout << "Not registered now!" << endl;
+                        messages.clear();
+                        continue;
+                    }
+                    proxy.bot_unregister(core._core);
+                    while((linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationCleared)){
+                        core.iterate();
+                        usleep(20000);
+                    }
+                    
+                    if(linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationCleared)
+                    {
+                        cout << "Succesfully unregistered!" << endl;
+                    }
+                    else
+                    {
+                        cout << "Unegistration failed!" << endl;
+                    }
+
+                }
+                else if(command == ":status")
+                {
+                    string msg = "PRIVMSG " + bot.user_nick + " :status\r\n";
+                    bot.send_com(msg);
+                    if(proxy.proxy_cfg == nullptr)
+                    {
+                        cout << "Not registered!" << endl;
+                        messages.clear();
+                        continue;
+                    }
+                    if(linphone_proxy_config_get_state(proxy.proxy_cfg) != LinphoneRegistrationOk)
+                    {
+                        cout << "Not registered!" << endl;
+                        messages.clear();
+                        continue;
+                    }
+                    else{
+                        cout << "Registered to:...!" << endl;
+                    }
+
                 }
                 else if(command == ":accept")
                 {
@@ -394,7 +448,6 @@ int main(int argc, char *argv[]){
                     bot.send_com(msg);
                     /* decline */
                 }
-                //dodelat cancel
                 else{
                     string msg = "PRIVMSG " + bot.user_nick + " :Unknown command!\r\n";
                     bot.send_com(msg);

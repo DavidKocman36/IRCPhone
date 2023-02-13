@@ -15,39 +15,39 @@ int aux = 0;
 /* TODO: Dodelat callbacks na CONNECTED, OUTGOING a INCOMING */
 static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState cstate, const char *msg){
 	switch(cstate){
+        case LinphoneCallIncomingReceived:
+			printf("A call is here!!!!!\n");
+            linphone_call_accept(call);
+            break;
         case LinphoneCallStateOutgoingInit:
             printf("Started the call!\n");
             break;
 		case LinphoneCallOutgoingRinging:
 			printf("It is now ringing remotely !\n");
-		break;
+		    break;
 		case LinphoneCallOutgoingEarlyMedia:
 			printf("Receiving some early media\n");
-		break;
+		    break;
 		case LinphoneCallConnected:
 			printf("We are connected !\n");
-            //linphone_call_pause(call);
 		    break;
-
 		case LinphoneCallStreamsRunning:
-            //linphone_call_resume(call);
 			printf("Media streams established !\n");
 		    break;
         case LinphoneCallStatePausing:
-            
             break;
         case LinphoneCallStatePaused:
             //linphone_call_resume(call);
             break;
 		case LinphoneCallEnd:
 			printf("Call is terminated.\n");
-		break;
+		    break;
 		case LinphoneCallError:
 			printf("Call failure !\n");
             break;
         case LinphoneCallReleased:
             printf("Call is released!\n");
-		break;
+		    break;
 		default:
 			printf("Unhandled notification %i\n",cstate);
 	}
@@ -99,7 +99,7 @@ void irc_bot_core::core_create()
     linphone_core_cbs_set_dtmf_received(this->_cbs, dtmfHandler);
     linphone_core_cbs_set_registration_state_changed(this->_cbs, registration_state_changed);
     linphone_core_add_callbacks(this->_core, this->_cbs);
-    linphone_core_enable_echo_cancellation(this->_core, false);
+    //linphone_core_enable_echo_cancellation(this->_core, false);
     //create core cbs
 }
 

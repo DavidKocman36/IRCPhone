@@ -3,9 +3,6 @@
 irc_bot_call::irc_bot_call()
 {
     this->_call = nullptr;
-
-    //
-    this->_outgoingCall = nullptr;
 }
 
 irc_bot_call::~irc_bot_call()
@@ -39,3 +36,5 @@ void irc_bot_call::call_terminate()
         _calls.pop_back();
     }
 }
+
+/* ACCEPT and DENY*/
