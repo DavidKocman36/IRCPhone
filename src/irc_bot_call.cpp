@@ -21,7 +21,7 @@ void irc_bot_call::call_invite(LinphoneCore *lc ,string uri)
     }
     cout << "Calling " << uri << "!" << endl;
     linphone_call_ref(this->_call);
-    _calls.push_back(this->_call);
+    //_calls.push_back(this->_call);
 }
 
 void irc_bot_call::call_terminate()
@@ -33,7 +33,7 @@ void irc_bot_call::call_terminate()
 	    /*at this stage we don't need the call object */
         linphone_call_unref(this->_call);
         //TODO: ne vždy poslední pop back
-        _calls.pop_back();
+        //_calls.pop_back();
     }
 }
 

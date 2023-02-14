@@ -23,6 +23,8 @@ void irc_bot_proxy::set_credentials(string &user, string &passw)
 
 void irc_bot_proxy::bot_register(LinphoneCore *lc)
 {
+    /* TODO: make return a number for error handling */
+
     /*create proxy config*/
     this->proxy_cfg = linphone_core_create_proxy_config(lc);
     linphone_core_clear_proxy_config(lc);

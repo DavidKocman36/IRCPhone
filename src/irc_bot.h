@@ -9,6 +9,8 @@
     #include <netinet/in.h>
     #include <netdb.h>
     #include <vector>
+    #include <unistd.h>
+    #include <signal.h>
 
     #include "my_string.cpp"
     #include "irc_bot_core.h"
@@ -35,6 +37,7 @@
         //send command method
         void send_com(string command);
         int check_messages_during_call(irc_bot_call *call, irc_bot_core *core);
+        void bot_terminate(irc_bot_core *core, irc_bot_proxy *proxy);
 
         irc_bot();
     };

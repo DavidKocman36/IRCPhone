@@ -1,5 +1,4 @@
 #include "irc_bot.h"
-#include <unistd.h>
 
 irc_bot::irc_bot()
 {
@@ -9,6 +8,44 @@ void irc_bot::send_com(string command)
 {
     send(sockfd, command.c_str(), command.size(), 0);
 }
+
+void irc_bot::bot_terminate(irc_bot_core *core, irc_bot_proxy *proxy)
+{
+    string msg = "PRIVMSG " + user_nick + " :Bot is ending, bye!\r\n";
+    send_com(msg);
+
+    if(proxy->proxy_cfg != nullptr && linphone_proxy_config_get_state(proxy->proxy_cfg) == LinphoneRegistrationOk)
+    {
+        proxy->bot_unregister(core->_core);
+        while((linphone_proxy_config_get_state(proxy->proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy->proxy_cfg) !=  LinphoneRegistrationCleared)){
+            core->iterate();
+            usleep(20000);
+        }
+        
+        if(linphone_proxy_config_get_state(proxy->proxy_cfg) == LinphoneRegistrationCleared)
+        {
+            cout << "Succesfully unregistered!" << endl;
+        }
+        else
+        {
+            cout << "Unegistration failed!" << endl;
+        }
+    }
+    
+    core->core_destroy();
+}
+
+/* TODO: All classes moved to global scope so it might cause problems? */
+irc_bot bot;
+irc_bot_core core;
+irc_bot_call call;
+irc_bot_proxy proxy;
+
+static void stop(int signum){
+	bot.bot_terminate(&core, &proxy);
+    exit(0);
+}
+
 
 //metoda pro volani adresaroveho API
 void address_book()
@@ -112,7 +149,7 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core)
             }
             else if(command == ":cancel")
             {
-                string msg = "PRIVMSG " + user_nick + " :cancelling call to: " + outgoingCallee + "\r\n";
+                string msg = "PRIVMSG " + user_nick + " :cancelling call to " + outgoingCallee + "\r\n";
                 outgoingCallee.clear();
                 /**
                  * Zde podminka ze pokud bude ve state Init/Ringing/Progress/EarlyMedia
@@ -147,10 +184,7 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    irc_bot bot;
-    irc_bot_core core;
-    irc_bot_call call;
-    irc_bot_proxy proxy;
+    signal(SIGINT, stop);
 
     core.core_create();
     linphone_core_set_log_file(NULL);
@@ -225,6 +259,13 @@ int main(int argc, char *argv[]){
     while(42)
     {
         core.iterate();
+        /* TODO: Not getting more than one :/ */
+        if(!incomingCallMessage.empty())
+        {
+            string msg = "PRIVMSG " + bot.user_nick + " :" + incomingCallMessage + "\r\n";
+            bot.send_com(msg);
+            incomingCallMessage.clear();
+        }
         bytes_recieved = recv(bot.sockfd, buffer, 4096, 0);
         if(bytes_recieved > 0)
         {
@@ -261,15 +302,6 @@ int main(int argc, char *argv[]){
 
                 /* vytvorit si vektor hovoru, diky kterym budu moct acceptovat a rozlisovat hovory */
 
-                /** 
-                 * TODO
-                 * AuthInfo
-                 * Proxy
-                 * Call
-                 * Core !
-                 * Config a FactoryConfig
-                 * 
-                */
                 cout << msg << endl; 
                 vector<string> aux;
                 split(messages[0], "!", aux);
@@ -283,28 +315,7 @@ int main(int argc, char *argv[]){
                 string command = messages[3];
                 if(command == ":end") /*end*/
                 {
-                    string msg = "PRIVMSG " + bot.user_nick + " :Bot is ending, bye!\r\n";
-                    bot.send_com(msg);
-
-                    if(proxy.proxy_cfg != nullptr && linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationOk)
-                    {
-                        proxy.bot_unregister(core._core);
-                        while((linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationCleared)){
-                            core.iterate();
-                            usleep(20000);
-                        }
-                        
-                        if(linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationCleared)
-                        {
-                            cout << "Succesfully unregistered!" << endl;
-                        }
-                        else
-                        {
-                            cout << "Unegistration failed!" << endl;
-                        }
-                    }
-                    
-                    core.core_destroy();
+                    bot.bot_terminate(&core, &proxy);
                     //dealloc if needed
                     return 0;
                 }
@@ -332,7 +343,7 @@ int main(int argc, char *argv[]){
                     bot.outgoingCallee = uri;
                     int ret = -1;
                     
-                    //linphone_call_set_microphone_muted(call._call, false);
+                    linphone_call_set_speaker_muted(call._call, false);
 
                     cout << "VSTUPUJU DO LOOPU" << endl;
                     while (!(linphone_call_get_state(call._call) == LinphoneCallReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateEnd) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
@@ -434,18 +445,63 @@ int main(int argc, char *argv[]){
                 }
                 else if(command == ":accept")
                 {
-                    string msg = "PRIVMSG " + bot.user_nick + " :accept\r\n";
-                    bot.send_com(msg);
+                    //string msg = "PRIVMSG " + bot.user_nick + " :accept\r\n";
+                    //bot.send_com(msg);
                     /* accept */
                     /* tady pokud existuje prichozi hovor se hovor prijme */
                     /* zmeni se state -> metoda accept */
                     /* probehne vstup do loopu, ktery obsluhuje hovor (podle me stejny loop jak v hovoru) */
+                    if(incomingCall != nullptr)
+                    {
+                        int ret = linphone_call_accept(incomingCall);
+                        if(ret == 1)
+                        {
+                            //NOW WE CALLING
+                            cout << "ACCEPTED!" << endl;
+                        }
+                        else
+                        {
+                            //OOPS AN ERROR!
+                        }
+                        
+                        call._call = incomingCall;
+                        incomingCall = nullptr;
+                        linphone_call_ref(call._call);
+                        
+                        linphone_call_set_speaker_muted(call._call, false);
+                        //call._calls.push_back(call._call);
+                        
+                        cout << "VSTUPUJU DO LOOPU" << endl;
+                        int exit = -1;
+                        while (!(linphone_call_get_state(call._call) == LinphoneCallReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateEnd) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
+                        {
+                            core.iterate();
+                            exit = bot.check_messages_during_call(&call, &core);
+                            if(exit == 1)
+                            {
+                                break;
+                            }
+                        }
+                        cout << "VYSTUPUJU Z LOOPU" << endl;
+                    }
 
                 }
                 else if(command == ":decline")
                 {
                     string msg = "PRIVMSG " + bot.user_nick + " :decline\r\n";
                     bot.send_com(msg);
+                    if(incomingCall != nullptr)
+                    {
+                        int ret = linphone_call_decline(incomingCall, LinphoneReasonDeclined);
+                        if(ret == 1)
+                        {
+                            //DECLINED
+                        }
+                        else
+                        {
+                            //AN ERROR DECLINING
+                        }
+                    }
                     /* decline */
                 }
                 else{

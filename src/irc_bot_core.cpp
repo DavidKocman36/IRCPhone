@@ -10,14 +10,25 @@ irc_bot_core::~irc_bot_core()
 
 }
 
-int aux = 0;
+string incomingCallMessage;
+LinphoneCall *incomingCall;
+const LinphoneAddress *from;
+const char *user;
+const char *domain;
+
 
 /* TODO: Dodelat callbacks na CONNECTED, OUTGOING a INCOMING */
 static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState cstate, const char *msg){
 	switch(cstate){
         case LinphoneCallIncomingReceived:
 			printf("A call is here!!!!!\n");
-            linphone_call_accept(call);
+            //linphone_call_accept(call);
+            from = linphone_call_get_remote_address(call);
+            user = linphone_address_get_username(from);
+            domain = linphone_address_get_domain(from);
+            incomingCallMessage = string(user) + "@" + string(domain) + string(" is calling!");
+            incomingCall = call;
+            cout << endl << incomingCallMessage << endl;
             break;
         case LinphoneCallStateOutgoingInit:
             printf("Started the call!\n");

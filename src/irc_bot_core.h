@@ -6,6 +6,11 @@
 
 using namespace std;
 
+/* Message used to notify user when someone is calling */
+extern string incomingCallMessage;
+/*  */
+extern LinphoneCall *incomingCall;
+
 class irc_bot_core
 {
 public:
