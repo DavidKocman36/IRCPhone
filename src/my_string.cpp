@@ -1,13 +1,7 @@
+#include "my_string.h"
 /**
  * A cpp file containing all string methonds not present as a standard c++ feature
 */
-
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <vector>
-
-using namespace std;
 
 //split string
 //src: https://stackoverflow.com/questions/289347/using-strtok-with-a-stdstring

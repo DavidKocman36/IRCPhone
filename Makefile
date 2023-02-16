@@ -1,9 +1,9 @@
 CC = g++
 CFLAGS  = -std=c++2a -g -I$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/include -L$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/lib -llinphone
 
-TARGET = src/irc_bot
+TARGET = src/irc_bot_main
 TARGET_OUT = irc_bot
-OBJECT_FILES = src/irc_bot_core.cpp src/irc_bot_call.cpp src/irc_bot_proxy.cpp
+OBJECT_FILES = src/my_string.cpp src/irc_bot.cpp src/irc_bot_core.cpp src/irc_bot_call.cpp src/irc_bot_proxy.cpp src/irc_bot_message.cpp 
 
 current_dir = $(shell pwd)
 

@@ -10,18 +10,19 @@ irc_bot_call::~irc_bot_call()
 
 }
 
-void irc_bot_call::call_invite(LinphoneCore *lc ,string uri)
+int irc_bot_call::call_invite(LinphoneCore *lc ,string uri)
 {
     this->_call = linphone_core_invite(lc, uri.c_str());
     cout << "STATE: " << linphone_call_get_state(this->_call) << endl;
     if(this->_call == nullptr)
     {
         cout << "Error calling " << uri << "!" << endl;
-        return;
+        return 1;
     }
     cout << "Calling " << uri << "!" << endl;
     linphone_call_ref(this->_call);
     //_calls.push_back(this->_call);
+    return 0;
 }
 
 void irc_bot_call::call_terminate()

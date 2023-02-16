@@ -16,4 +16,9 @@ mkdir if start core throws an exception!
 
 Have to be started with root privileges!
 
+sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/identity_grammar /usr/share/belr/grammars/
+sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/cpim_grammar /usr/share/belr/grammars/
+
+find /usr/share/belr/grammars/identity_grammar
+
 

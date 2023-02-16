@@ -11,6 +11,7 @@ irc_bot_core::~irc_bot_core()
 }
 
 string incomingCallMessage;
+string incomingChatMessage;
 LinphoneCall *incomingCall;
 const LinphoneAddress *from;
 const char *user;
@@ -65,6 +66,7 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
 }
 
 static void registration_state_changed(struct _LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message){
+        /* TODO: deprecated */
 		printf("New registration state %s for user id [%s] at proxy [%s]\n"
 				,linphone_registration_state_to_string(cstate)
 				,linphone_proxy_config_get_identity(cfg)
@@ -72,18 +74,22 @@ static void registration_state_changed(struct _LinphoneCore *lc, LinphoneProxyCo
 }
 
 
-static void dtmfHandler(LinphoneCore *lc, LinphoneCall *call, int dtmf) {
-    //PhpLinphoneCall *theCall = PhpLinphoneCall::selectCall(call);
-    //if (theCall != nullptr) {
-        //#ifdef DEBUG
-        //Php::out<<"[DEBUG - MAIN THREAD] Settings dtmf in the call object"<<std::endl;
-        //#endif
-    //theCall->setDtmf(dtmf);
-    //} else {
-      //  #ifdef DEBUG
-        //Php::out<<"[DEBUG - MAIN THREAD] Call not found!"<<std::endl;
-        //#endif
-    //}
+void text_received(LinphoneCore *lc, LinphoneChatRoom *room, LinphoneChatMessage *message) {
+    //printf(" Message [%s] received from [%s] \n", linphone_chat_message_get_text(message) , linphone_address_as_string(linphone_chat_room_get_peer_address(room)));
+    string aux = string(linphone_address_as_string(linphone_chat_room_get_peer_address(room))) + ": " + string(linphone_chat_message_get_text(message));
+    incomingChatMessage = aux;
+}
+
+void irc_bot_core::create_nat_policy()
+{
+    this->_nat = linphone_core_create_nat_policy(this->_core);
+    linphone_core_enable_ipv6(this->_core, false);
+    linphone_core_enable_keep_alive(this->_core, true);
+    linphone_nat_policy_enable_stun(this->_nat, true);
+    linphone_nat_policy_set_stun_server(this->_nat, "stun.linphone.org:3478");
+    linphone_core_enable_forced_ice_relay(this->_core, true);
+    linphone_nat_policy_enable_ice(this->_nat, true);
+    linphone_core_set_nat_policy(this->_core, this->_nat);
 }
 
 void irc_bot_core::core_create()
@@ -107,10 +113,11 @@ void irc_bot_core::core_create()
     cout << "Core successfully created!" << endl;
 
     linphone_core_cbs_set_call_state_changed(this->_cbs, call_state_changed);
-    linphone_core_cbs_set_dtmf_received(this->_cbs, dtmfHandler);
     linphone_core_cbs_set_registration_state_changed(this->_cbs, registration_state_changed);
+    linphone_core_cbs_set_message_received(this->_cbs, text_received);
     linphone_core_add_callbacks(this->_core, this->_cbs);
-    //linphone_core_enable_echo_cancellation(this->_core, false);
+    linphone_core_enable_echo_cancellation(this->_core, false);
+    this->create_nat_policy();
     //create core cbs
 }
 
@@ -128,5 +135,4 @@ void irc_bot_core::core_destroy()
 void irc_bot_core::iterate()
 {
     linphone_core_iterate(this->_core);
-    //cout << "ITERUJU" << endl;
 }

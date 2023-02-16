@@ -3,9 +3,7 @@
 
 #include <vector>
 
-#include "linphone++/linphone.hh"
 #include <linphone/linphonecore.h>
-#include <linphone/conference.h>
 
 
 using namespace std;
@@ -23,7 +21,7 @@ public:
     irc_bot_call();
     ~irc_bot_call();
 
-    void call_invite(LinphoneCore *lc, string uri);
+    int call_invite(LinphoneCore *lc, string uri);
     void call_terminate();
 };
 

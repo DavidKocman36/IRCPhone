@@ -12,13 +12,13 @@
     #include <unistd.h>
     #include <signal.h>
 
-    #include "my_string.cpp"
+    #include "my_string.h"
     #include "irc_bot_core.h"
     #include "irc_bot_call.h"
     #include "irc_bot_proxy.h"
+    #include "irc_bot_message.h"
 
-    #include "linphone++/linphone.hh"
-    #include <linphone/linphonecore.h>    
+    #include <linphone/linphonecore.h>
     
     using namespace std;
 
@@ -32,12 +32,16 @@
         string password;
         string nick;
         string outgoingCallee;
+
+        string sipUsername;
+        
         int sockfd;
 
         //send command method
         void send_com(string command);
-        int check_messages_during_call(irc_bot_call *call, irc_bot_core *core);
+        int check_messages_during_call(irc_bot_call *call, irc_bot_core *core, irc_bot_message *callChat);
         void bot_terminate(irc_bot_core *core, irc_bot_proxy *proxy);
+        void send_init_com(string command);
 
         irc_bot();
     };
