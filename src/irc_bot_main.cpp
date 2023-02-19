@@ -6,17 +6,19 @@ irc_bot_core core;
 irc_bot_call call;
 irc_bot_proxy proxy;
 irc_bot_message callChat;
+/* TEST */
+irc_bot_message chatRoom;
 
 static void stop(int signum){
 	bot.bot_terminate(&core, &proxy);
+    string quit_com = "QUIT\r\n";
+    bot.send_init_com(quit_com);
     exit(0);
 }
 
 int main(int argc, char *argv[]){
 
-    // ./irc_bot {ip} {channel} {user} {password} | [port]
-    // (mozna port)
-
+    // ./irc_bot {ip/server} {channel} {user} {password}
     if(argc != 5){
         cout << "Not enogh aruments!" << endl;
         cout << "USAGE: ./irc_bot {server} {channel} {user_nick} {password}" << endl;
@@ -33,6 +35,8 @@ int main(int argc, char *argv[]){
     linphone_core_enable_mic(core._core, true);
     linphone_core_set_audio_port_range(core._core, 7077, 7079);
     linphone_core_set_play_file(core._core, "./sounds/toy-mono.wav");
+    //linphone_core_set_max_calls(core._core, 1);
+    const char *primCont = linphone_core_get_primary_contact(core._core);
 
     bot.server = argv[1];
     bot.channel = argv[2];
@@ -97,15 +101,26 @@ int main(int argc, char *argv[]){
     bot.send_init_com(user_com);
     string hello_com = "PRIVMSG " + bot.user_nick + " :Hello!\r\n";
     bot.send_init_com(hello_com);
+    string id_com = "PRIVMSG " + bot.user_nick + " :You are as " + primCont + "!\r\n";
+    bot.send_init_com(id_com);
 
     while(42)
     {
         core.iterate();
         if(!incomingCallMessage.empty())
         {
-            string msg = "PRIVMSG " + bot.user_nick + " :" + incomingCallMessage + "\r\n";
+            bot.order += 1;
+            /* TODO: Fix this message a bit */
+            string msg = "PRIVMSG " + bot.user_nick + " :" + incomingCallMessage + ". " + "Type \"accept " + to_string(bot.order) + "\" to accept this call!\r\n";
             bot.send_com(msg);
+            bot.incomingCallsVector.push_back(incomingCall);
             incomingCallMessage.clear();
+        }
+        if(!incomingChatMessage.empty())
+        {
+            string msg = "PRIVMSG " + bot.user_nick + " :" + incomingChatMessage + "\r\n";
+            bot.send_com(msg);
+            incomingChatMessage.clear();
         }
         bytes_recieved = recv(bot.sockfd, buffer, 4096, 0);
         if(bytes_recieved > 0)
@@ -126,6 +141,8 @@ int main(int argc, char *argv[]){
             {
                 //dealloc if needed
                 bot.bot_terminate(&core, &proxy);
+                string quit_com = "QUIT\r\n";
+                bot.send_init_com(quit_com);
                 return 0;
             }
 
@@ -152,7 +169,74 @@ int main(int argc, char *argv[]){
                 {
                     bot.bot_terminate(&core, &proxy);
                     //dealloc if needed
+                    string quit_com = "QUIT\r\n";
+                    bot.send_init_com(quit_com);
                     return 0;
+                }
+                /* TODO: Only if not registered */
+                /* set stun and turn */
+                else if(command == ":-s")
+                {
+                    string msg;
+                    if(messages.size() < 5)
+                    {
+                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
+                        bot.send_com(msg);
+                        continue;
+                    }
+                    string address = messages[4];
+                    core.enable_stun(address);
+                    if(messages.size() > 5)
+                    {
+                        if(messages[5] == "-t")
+                        {
+                            if(messages.size() < 6)
+                            {
+                                msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
+                                bot.send_com(msg);
+                                continue;
+                            }
+                            string user = messages[6];
+                            string passw = messages[7];
+                            core.enable_turn(user, passw);   
+                        }
+                    }
+                }
+                /* set turn */
+                else if(command == ":-t")
+                {
+                    string msg;
+                    if(messages.size() < 7)
+                    {
+                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
+                        bot.send_com(msg);
+                        continue;
+                    }
+                    string user = messages[4];
+                    string passw = messages[5];
+                    core.enable_turn(user, passw);   
+                }
+                else if(command == ":mess")
+                {
+                    string msg;
+                    if(messages.size() < 5)
+                    {
+                        cout << "Wrong usage!" << endl;
+                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
+                        bot.send_com(msg);
+                        continue;
+                    }
+                    string uri = messages[4];
+                    chatRoom.create_chat_room(core._core, uri);
+
+                    string chatMessage;
+                    for(int i = 5; i < messages.size(); i++)
+                    {
+                        chatMessage = chatMessage + " " + messages[i];
+                    }
+                    chatRoom.send_message(chatMessage);
+                    msg = "PRIVMSG " + bot.user_nick + " :Sending a message\r\n";
+                    bot.send_init_com(msg);
                 }
                 else if(command == ":call")
                 {
@@ -172,7 +256,7 @@ int main(int argc, char *argv[]){
                         continue;
                     }
 
-                    /* TODO: regex na check adresy */
+                    /* TODO: regex na check adresy , zjisteno ze jde volat i bez predpony sip:...*/
 
                     string uri = messages[4];
                     //TODO: Udelat check jestli je user zaregistrovany!
@@ -290,6 +374,7 @@ int main(int argc, char *argv[]){
                     bot.send_com(msg);
                     
                     proxy.bot_unregister(core._core);
+                    bot.sipUsername.clear();
                     while((linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationCleared)){
                         core.iterate();
                         usleep(20000);
@@ -332,13 +417,37 @@ int main(int argc, char *argv[]){
                         msg = "PRIVMSG " + bot.user_nick + " :Registered to " + bot.sipUsername + "!\r\n";
                         bot.send_com(msg);
                     }
-                    /* TODO: Seznam Hovoru */
+                    /* TODO: Seznam prichozich hovoru */
+                    /* TODO: Vypsat primary contact */
+                    /* TODO: Vypsat aktualni hovor pokud je */
                 }
                 else if(command == ":accept")
                 {
                     string msg;
                     if(incomingCall != nullptr)
                     {
+                        if(messages.size() != 5)
+                        {
+                            cout << "Wrong usage!" << endl;
+                            msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                        if(stoi(messages[4]) > bot.incomingCallsVector.size())
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :No incoming call on this position!\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                        int index = stoi(messages[4]) - 1;
+                        incomingCall = bot.incomingCallsVector[index];
+                        if(incomingCall == nullptr)
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :An error accepting call!\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+
                         int ret = linphone_call_accept(incomingCall);
                         if(ret == 0)
                         {
@@ -355,9 +464,17 @@ int main(int argc, char *argv[]){
                         
                         call._call = incomingCall;
                         incomingCall = nullptr;
+                        for(int i = 0; i < bot.incomingCallsVector.size(); i++)
+                        {
+                            int ret = linphone_call_decline(bot.incomingCallsVector[i], LinphoneReasonDeclined);   
+                        }
+                        bot.incomingCallsVector.clear();
+                        bot.order = 0;
+
                         linphone_call_ref(call._call);
                         
                         linphone_call_set_speaker_muted(call._call, false);
+                        linphone_core_enable_mic(core._core, true);
                         bool aux = true;
                         string msg;
                         //call._calls.push_back(call._call);
@@ -376,6 +493,8 @@ int main(int argc, char *argv[]){
                                 {
                                     cout << "Error creating chat romm!" << endl;
                                 }
+                                msg = "PRIVMSG " + bot.user_nick + " :Chat room established with !\r\n";
+                                bot.send_com(msg);
                                 aux = false;
                             }
                             exit = bot.check_messages_during_call(&call, &core, &callChat);
@@ -399,10 +518,22 @@ int main(int argc, char *argv[]){
                     string msg;
                     if(incomingCall != nullptr)
                     {
-                        int ret = linphone_call_decline(incomingCall, LinphoneReasonDeclined);
-                        if(ret == 1)
+                        int ret;
+                        incomingCall = nullptr;
+                        for(int i = 0; i < bot.incomingCallsVector.size(); i++)
                         {
-                            msg = "PRIVMSG " + bot.user_nick + " :Declined call from ...!\r\n";
+                            ret = linphone_call_decline(bot.incomingCallsVector[i], LinphoneReasonDeclined);  
+                            if(ret != 0)
+                            {
+                                break;
+                            } 
+                        }
+                        bot.incomingCallsVector.clear();
+                        bot.order = 0;
+                        
+                        if(ret == 0)
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :Declined all calls!\r\n";
                             bot.send_com(msg);
                         }
                         else
@@ -413,7 +544,7 @@ int main(int argc, char *argv[]){
                     }
                     else
                     {
-                        msg = "PRIVMSG " + bot.user_nick + " :There is no call to be declined!\r\n";
+                        msg = "PRIVMSG " + bot.user_nick + " :There is no call(s) to be declined!\r\n";
                         bot.send_com(msg);
                     }
                 }

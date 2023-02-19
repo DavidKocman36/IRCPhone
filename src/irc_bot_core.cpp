@@ -56,6 +56,11 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
 		    break;
 		case LinphoneCallError:
 			printf("Call failure !\n");
+            if(incomingCall != nullptr)
+            {
+                incomingCall = nullptr;
+                incomingCallMessage = string(user) + "@" + string(domain) + string(" is not calling anymore!");
+            }
             break;
         case LinphoneCallReleased:
             printf("Call is released!\n");
@@ -85,11 +90,24 @@ void irc_bot_core::create_nat_policy()
     this->_nat = linphone_core_create_nat_policy(this->_core);
     linphone_core_enable_ipv6(this->_core, false);
     linphone_core_enable_keep_alive(this->_core, true);
-    linphone_nat_policy_enable_stun(this->_nat, true);
-    linphone_nat_policy_set_stun_server(this->_nat, "stun.linphone.org:3478");
-    linphone_core_enable_forced_ice_relay(this->_core, true);
-    linphone_nat_policy_enable_ice(this->_nat, true);
     linphone_core_set_nat_policy(this->_core, this->_nat);
+}
+
+void irc_bot_core::enable_stun(string &address)
+{
+    linphone_nat_policy_enable_ice(this->_nat, true);
+    linphone_nat_policy_enable_stun(this->_nat, true);
+    linphone_nat_policy_set_stun_server(this->_nat, address.c_str());
+    linphone_core_set_nat_policy(this->_core, this->_nat);   
+}
+
+void irc_bot_core::enable_turn(string &user, string &passw)
+{
+    linphone_nat_policy_enable_turn(this->_nat, true);
+    this->_turn_cred=linphone_auth_info_new(user.c_str() ,NULL, passw.c_str() ,NULL,NULL,NULL); /*create authentication structure from identity*/
+    linphone_core_add_auth_info(this->_core, this->_turn_cred);
+    linphone_nat_policy_set_stun_server_username(this->_nat, user.c_str());
+    linphone_core_set_nat_policy(this->_core, this->_nat); 
 }
 
 void irc_bot_core::core_create()

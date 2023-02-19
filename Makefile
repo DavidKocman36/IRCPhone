@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS  = -std=c++2a -g -I$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/include -L$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/lib -llinphone
+CFLAGS  = -std=c++2a -g -w -I$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/include -L$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/lib -llinphone -lbctoolbox
 
 TARGET = src/irc_bot_main
 TARGET_OUT = irc_bot
@@ -13,7 +13,7 @@ run:
 	./$(TARGET_OUT) irc.libera.chat Kocimistnost Koci password
 
 $(TARGET): $(TARGET).cpp
-	$(CC) $(TARGET).cpp $(OBJECT_FILES) $(CFLAGS) -o $(TARGET_OUT)
+	$(CC) $(TARGET).cpp -lsqlite3 $(OBJECT_FILES) $(CFLAGS) -o $(TARGET_OUT)
 
 clean:
 	$(RM) $(TARGET)

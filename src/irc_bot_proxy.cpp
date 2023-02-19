@@ -45,11 +45,14 @@ void irc_bot_proxy::bot_register(LinphoneCore *lc)
     linphone_proxy_config_enable_register(this->proxy_cfg, true); /*activate registration for this proxy config*/
     linphone_address_unref(this->from); /*release resource*/
     linphone_core_add_proxy_config(lc, this->proxy_cfg); /*add proxy config to linphone core*/
+    linphone_core_set_default_proxy_config(lc, this->proxy_cfg);
 }
 
 void irc_bot_proxy::bot_unregister(LinphoneCore *lc)
 {   
+    this->proxy_cfg = linphone_core_get_default_proxy_config(lc);
 	linphone_proxy_config_edit(this->proxy_cfg); /*start editing proxy configuration*/
 	linphone_proxy_config_enable_register(this->proxy_cfg, false); /*de-activate registration for this proxy config*/
 	linphone_proxy_config_done(this->proxy_cfg); /*initiate REGISTER with expire = 0*/
+    linphone_core_clear_proxy_config(lc);
 }

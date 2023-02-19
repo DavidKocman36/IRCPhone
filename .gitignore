@@ -1,3 +1,5 @@
 .vscode/
 linphone-sdk/
 todo.txt
+conf/linphonerc
+db/address_book.db

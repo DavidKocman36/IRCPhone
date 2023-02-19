@@ -16,8 +16,8 @@ void irc_bot_message::create_call_chat_room(LinphoneCall *call)
 void irc_bot_message::create_chat_room(LinphoneCore *lc, string &uri)
 {
     this->uri = uri.c_str();
-    //chat_room = linphone_core_get_chat_room_from_uri(lc, this->uri);
-    //this->chat_room = linphone_core_search_chat_room(lc, NULL, );
+    LinphoneAddress *addr = linphone_core_create_address(lc, this->uri);
+    this->chat_room = linphone_core_get_chat_room(lc, addr);
 }
 
 void irc_bot_message::send_message(string &msg)

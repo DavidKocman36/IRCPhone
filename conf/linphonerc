@@ -4,7 +4,7 @@ download_bw=2048
 upload_bw=1024
 use_stun=1
 stun_server=stun.linphone.org:3478
-nat_policy_ref=IrxIbNkgV8Hoxmk
+nat_policy_ref=ednQBYEvQu~2Lc8
 mtu=1300
 adaptive_rate_control=1
 
@@ -16,7 +16,7 @@ protocols=stun,ice
 [sip]
 verify_server_certs=1
 verify_server_cn=1
-contact=sip:root@unknown-host
+contact=sip:root@10.0.2.15:5060
 media_encryption=none
 guess_hostname=1
 inc_timeout=30
@@ -33,6 +33,7 @@ auto_download_incoming_files_max_size=-1
 sender_name_hidden_in_forward_message=0
 
 [misc]
+max_calls=1
 uuid=3c63acaf-a981-00b2-9d27-ae99d5b07833
 
 [rtp]
@@ -46,6 +47,13 @@ audio_adaptive_jitt_comp_enabled=1
 video_adaptive_jitt_comp_enabled=1
 
 [sound]
+playback_dev_id=ALSA
+ringer_dev_id=ALSA
+capture_dev_id=ALSA
+rec_lev=80
+play_lev=80
+ring_lev=80
+source=m
 remote_ring=./sounds/ringback.wav
 hold_music=./sounds/toy-mono.wav
 playback_gain_db=0.000000
@@ -127,100 +135,136 @@ ref=uElz1ySlgc-dl8z
 stun_server=stun.linphone.org:3478
 protocols=stun,ice
 
-[nat_policy_2]
-ref=PLZYLf3rGnp5xsv
+[nat_policy_21]
+ref=sYDR8L7qHWPQXrn
 stun_server=stun.linphone.org:3478
 protocols=stun,ice
+
+[nat_policy_22]
+ref=C5JQ3EWkKe5RbhG
+stun_server=stun.linphone.org:3478
+protocols=stun,ice
+
+[nat_policy_2]
+ref=TXXn99Z5kAlToT7
+stun_server=stun.linphone.org:3478
 
 [nat_policy_3]
-ref=95OXKXXeBaDZrPO
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=c~xG5bbQwIJMhiZ
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
 
 [nat_policy_4]
-ref=Q-oCUMGwpUVYm3M
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=FS7PPcbd7gm9h4y
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
 
 [nat_policy_5]
-ref=7goxcOp54GG6oxt
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=yYY-T2StH9i6G7h
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
 
 [nat_policy_6]
-ref=c2roou2feEebHpM
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=ycBpJPv-EYOaicS
 
 [nat_policy_7]
-ref=Tfg6yrQrvD9jrmp
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=2WXWbxxy2-Nl-ff
 
 [nat_policy_8]
-ref=pkDevPhWZyGuA7q
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=W~Huk9aB0BYi8xI
 
 [nat_policy_9]
-ref=uZq04Dn4qbzMMO8
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=41atxRILn33LNj3
 
 [nat_policy_10]
-ref=ucTvhkvbKvpstV8
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=91ju4DKHW3Vm2Si
 
 [nat_policy_11]
-ref=VCTBg4mylrMzPLb
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=a~xQ08hagMRULzL
 
 [nat_policy_12]
-ref=zTSCKUYuVxYD~ze
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=v4P9pys88SgVk-v
 
 [nat_policy_13]
-ref=zguAjG1bxWCMt3d
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=LE1YfciZ2ej0nxz
 
 [nat_policy_14]
-ref=P-EfGYpftUeC36A
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=vYL~SkXSNrq~0pX
 
 [nat_policy_15]
-ref=kUE7GbMuQSc8IKR
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=PJGvyn1bizLGBe7
 
 [nat_policy_16]
-ref=Fj1QOnup6IOyc4k
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=njzskl-19vDvFES
 
 [nat_policy_17]
-ref=b7DTQ0cxSYzej1p
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=edtnnb33AISdMUs
 
 [nat_policy_18]
-ref=lKKcfdnzSoFK6qF
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=6l1KiZIqPRaF-Ld
 
 [nat_policy_19]
-ref=e-VSKwPh1xNn7HM
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=aWkesrDDukKjxnG
 
 [nat_policy_20]
-ref=IrxIbNkgV8Hoxmk
-stun_server=stun.linphone.org:3478
-protocols=stun,ice
+ref=KI9noLL8M9~BTSy
+
+[nat_policy_23]
+ref=Pj00PzagSNtrH4b
+
+[nat_policy_24]
+ref=f-b5-YzY50gLjkB
+
+[nat_policy_25]
+ref=F1SQd94E626Xv-A
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
+
+[nat_policy_26]
+ref=i8~imVZ23Sl9rNB
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
+
+[nat_policy_27]
+ref=7dYQussmlAHh1rB
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
+
+[nat_policy_28]
+ref=ueWiNd3iaZ~Y~Ex
+
+[nat_policy_29]
+ref=b0vL32dC9TayXfG
+
+[nat_policy_30]
+ref=ZgjZkxlKW98UtgF
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
+
+[nat_policy_31]
+ref=XCip4C0Ls0-HFRh
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
+
+[nat_policy_32]
+ref=WlnlzHiZgT2niat
+stun_server=relay.metered.ca:80
+protocols=stun,turn,ice
+stun_server_username=f9640259e23e41c1f1d22dd0
+
+[nat_policy_33]
+ref=ugUpBy5F9YsHK0G
+
+[nat_policy_34]
+ref=55sZ149GGHoWlBf
 
 [auth_info_0]
 username=davidkocman
@@ -233,20 +277,20 @@ username=davidkocman
 passwd=palacinka123
 
 [auth_info_2]
-username=davidkocman
-passwd=palacinka123
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
 
 [auth_info_3]
-username=davidkocman
-passwd=palacinka123
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
 
 [auth_info_4]
-username=davidkocman
-passwd=palacinka123
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
 
 [auth_info_5]
-username=davidkocman
-passwd=palacinka123
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
 
 [auth_info_6]
 username=davidkocman
@@ -305,38 +349,65 @@ username=davidkocman
 passwd=palacinka123
 
 [auth_info_20]
-username=davidkocman
-passwd=palacinka123
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
 
 [auth_info_21]
-username=davidkocman
-passwd=palacinka123
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
 
 [auth_info_22]
-username=davidkocman
-passwd=palacinka123
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
 
 [auth_info_23]
 username=davidkocman
 passwd=palacinka123
 
 [auth_info_24]
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
+
+[auth_info_25]
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
+
+[auth_info_26]
 username=davidkocman
 passwd=palacinka123
 
-[proxy_0]
-reg_proxy=sip:sip.linphone.org
-reg_identity=sip:davidkocman@sip.linphone.org
-quality_reporting_enabled=0
-quality_reporting_interval=0
-reg_expires=3600
-reg_sendregister=0
-publish=0
-avpf=-1
-avpf_rr_interval=1
-dial_escape_plus=0
-privacy=32768
-push_notification_allowed=0
-idkey=proxy_config_0XwMuYhtM1HHQz5
-publish_expires=-1
+[auth_info_27]
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
+
+[auth_info_28]
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
+
+[auth_info_29]
+username=davidkocman
+passwd=palacinka123
+
+[auth_info_30]
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
+
+[auth_info_31]
+username=davidkocman
+passwd=palacinka123
+
+[auth_info_32]
+username=f9640259e23e41c1f1d22dd0
+passwd=NqvQHHqHN46afOpb
+
+[auth_info_33]
+username=davidkocman
+passwd=palacinka123
+
+[auth_info_34]
+username=davidkocman
+passwd=palacinka123
+
+[nat_policy_35]
+ref=ednQBYEvQu~2Lc8
 

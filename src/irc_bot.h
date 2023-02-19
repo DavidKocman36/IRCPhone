@@ -11,6 +11,7 @@
     #include <vector>
     #include <unistd.h>
     #include <signal.h>
+    #include <sqlite3.h>
 
     #include "my_string.h"
     #include "irc_bot_core.h"
@@ -34,6 +35,8 @@
         string outgoingCallee;
 
         string sipUsername;
+        vector<LinphoneCall *>incomingCallsVector;
+        int order;
         
         int sockfd;
 

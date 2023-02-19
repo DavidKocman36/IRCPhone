@@ -19,12 +19,16 @@ public:
     LinphoneCore *_core;
     LinphoneCoreCbs *_cbs;
     LinphoneNatPolicy *_nat;
+    LinphoneAuthInfo *_turn_cred;
+
     irc_bot_core();
     ~irc_bot_core();
     void core_create();
     void core_destroy();
     void iterate();
     void create_nat_policy();
+    void enable_stun(string &address);
+    void enable_turn(string &user, string &passw);
 };
 
 #endif

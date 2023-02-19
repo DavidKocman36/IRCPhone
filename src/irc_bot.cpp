@@ -2,6 +2,7 @@
 
 irc_bot::irc_bot()
 {
+    this->order = 0;
 } 
 
 void irc_bot::send_com(string command)
@@ -77,6 +78,14 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
         send_com(msg);
         incomingChatMessage.clear();
     }
+    if(!incomingCallMessage.empty())
+    {
+        order += 1;
+        string msg = "PRIVMSG " + user_nick + " :" + incomingCallMessage + ". " + "Type \"accept " + to_string(order) + "\" to accept this call!\r\n";
+        send_com(msg);
+        incomingCallsVector.push_back(incomingCall);
+        incomingCallMessage.clear();
+    }
 
     bytes_recieved = recv(sockfd, buffer, 4096, 0);
     if(bytes_recieved > 0)
@@ -146,7 +155,6 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
                 {
                     message = message + " " + messages[i];
                 }
-                cout << message << endl;
                 callChat->send_message(message);
             }
             else if(command == ":hangup")
@@ -155,6 +163,7 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
                 {
                     string msg = "PRIVMSG " + user_nick + " :Hanging up!\r\n"; /*TODO: treba vypsat jaky hovor, nebo vsechny*/
                     send_com(msg);
+                    outgoingCallee.clear();
                     /* TODO: Maybe terminate all? */
                     call->call_terminate();
                     return 1;
@@ -179,24 +188,21 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
                 
             }
 
-            /* TODO: buggy->no audio after unholding */
+            /* TODO: buggy->no audio after unholding sometimes */
             else if(command == ":hold")
             {
                 string msg = "PRIVMSG " + user_nick + " :holding call " + outgoingCallee + "\r\n";
-                outgoingCallee.clear();
-                //call->call_terminate();
                 linphone_call_pause(call->_call);
-                /* TODO: Play music */
+                linphone_call_set_speaker_muted(call->_call, true);
+                linphone_core_enable_mic(core->_core, false);
                 send_com(msg);
-
             }
             else if(command == ":resume")
             {
                 string msg = "PRIVMSG " + user_nick + " :resuming call " + outgoingCallee + "\r\n";
-                outgoingCallee.clear();
-                //call->call_terminate();
                 linphone_call_resume(call->_call);
                 linphone_call_set_speaker_muted(call->_call, false);
+                linphone_core_enable_mic(core->_core, true);
                 send_com(msg);
 
             }

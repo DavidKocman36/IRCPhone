@@ -21,4 +21,8 @@ sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/cpim_grammar
 
 find /usr/share/belr/grammars/identity_grammar
 
+if you have no sqlite3 on your pc, just run "sudo apt-get install libsqlite3-dev"
+
+Also have all dependencies used by liblinphone!!!
+
 
