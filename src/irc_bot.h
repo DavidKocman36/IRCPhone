@@ -11,13 +11,13 @@
     #include <vector>
     #include <unistd.h>
     #include <signal.h>
-    #include <sqlite3.h>
 
     #include "my_string.h"
     #include "irc_bot_core.h"
     #include "irc_bot_call.h"
     #include "irc_bot_proxy.h"
     #include "irc_bot_message.h"
+    #include "addr_book.h"
 
     #include <linphone/linphonecore.h>
     
@@ -42,9 +42,19 @@
 
         //send command method
         void send_com(string command);
-        int check_messages_during_call(irc_bot_call *call, irc_bot_core *core, irc_bot_message *callChat);
+        int check_messages_during_call(irc_bot_call *call, irc_bot_core *core, irc_bot_message *callChat, addr_book *addrBook,  irc_bot_proxy *proxy);
         void bot_terminate(irc_bot_core *core, irc_bot_proxy *proxy);
         void send_init_com(string command);
+
+        void print_status(irc_bot_core *core, irc_bot_proxy *proxy);
+        void print_help(vector<string> messages);
+
+        void call_loop(irc_bot_call *call, irc_bot_core *core, irc_bot_message *callChat, addr_book *addrBook,  irc_bot_proxy *proxy);
+
+        void call();
+
+        void accept();
+        void decline();
 
         irc_bot();
     };

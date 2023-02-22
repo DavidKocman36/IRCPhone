@@ -1,15 +1,16 @@
 #include "irc_bot.h"
 
-/* TODO: All classes moved to global scope so it might cause problems? */
 irc_bot bot;
 irc_bot_core core;
 irc_bot_call call;
 irc_bot_proxy proxy;
 irc_bot_message callChat;
+addr_book addrBook;
 /* TEST */
 irc_bot_message chatRoom;
 
 static void stop(int signum){
+    addrBook.addr_book_close();
 	bot.bot_terminate(&core, &proxy);
     string quit_com = "QUIT\r\n";
     bot.send_init_com(quit_com);
@@ -20,7 +21,7 @@ int main(int argc, char *argv[]){
 
     // ./irc_bot {ip/server} {channel} {user} {password}
     if(argc != 5){
-        cout << "Not enogh aruments!" << endl;
+        cout << "Not enough arguments!" << endl;
         cout << "USAGE: ./irc_bot {server} {channel} {user_nick} {password}" << endl;
         return 1;
     }
@@ -35,8 +36,19 @@ int main(int argc, char *argv[]){
     linphone_core_enable_mic(core._core, true);
     linphone_core_set_audio_port_range(core._core, 7077, 7079);
     linphone_core_set_play_file(core._core, "./sounds/toy-mono.wav");
+    linphone_core_set_ring(core._core, "./sounds/ringback.wav");
     //linphone_core_set_max_calls(core._core, 1);
     const char *primCont = linphone_core_get_primary_contact(core._core);
+
+    int er = addrBook.addr_book_open();
+    if(er) {
+        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(addrBook.db));
+    } 
+    else{
+        fprintf(stderr, "Opened database successfully\n");
+    }
+    sqlite3_busy_timeout(addrBook.db, 10);
+    addrBook.addr_book_create();
 
     bot.server = argv[1];
     bot.channel = argv[2];
@@ -101,7 +113,7 @@ int main(int argc, char *argv[]){
     bot.send_init_com(user_com);
     string hello_com = "PRIVMSG " + bot.user_nick + " :Hello!\r\n";
     bot.send_init_com(hello_com);
-    string id_com = "PRIVMSG " + bot.user_nick + " :You are as " + primCont + "!\r\n";
+    string id_com = "PRIVMSG " + bot.user_nick + " :You are now as " + primCont + "!\r\n";
     bot.send_init_com(id_com);
 
     while(42)
@@ -110,7 +122,9 @@ int main(int argc, char *argv[]){
         if(!incomingCallMessage.empty())
         {
             bot.order += 1;
-            /* TODO: Fix this message a bit */
+            /**
+             *  TODO: Fix this message a bit 
+            */
             string msg = "PRIVMSG " + bot.user_nick + " :" + incomingCallMessage + ". " + "Type \"accept " + to_string(bot.order) + "\" to accept this call!\r\n";
             bot.send_com(msg);
             bot.incomingCallsVector.push_back(incomingCall);
@@ -140,6 +154,7 @@ int main(int argc, char *argv[]){
             if(std::find(messages.begin(), messages.end(), "ERROR") != messages.end()) 
             {
                 //dealloc if needed
+                addrBook.addr_book_close();
                 bot.bot_terminate(&core, &proxy);
                 string quit_com = "QUIT\r\n";
                 bot.send_init_com(quit_com);
@@ -167,20 +182,20 @@ int main(int argc, char *argv[]){
                 string command = messages[3];
                 if(command == ":end") /*end*/
                 {
+                    addrBook.addr_book_close();
                     bot.bot_terminate(&core, &proxy);
                     //dealloc if needed
                     string quit_com = "QUIT\r\n";
                     bot.send_init_com(quit_com);
                     return 0;
                 }
-                /* TODO: Only if not registered */
                 /* set stun and turn */
                 else if(command == ":-s")
                 {
                     string msg;
                     if(messages.size() < 5)
                     {
-                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
+                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! -s <server> [-t <user> <password>]\r\n";
                         bot.send_com(msg);
                         continue;
                     }
@@ -192,7 +207,7 @@ int main(int argc, char *argv[]){
                         {
                             if(messages.size() < 6)
                             {
-                                msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
+                                msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! -s <server> [-t <user> <password>]\r\n";
                                 bot.send_com(msg);
                                 continue;
                             }
@@ -202,35 +217,46 @@ int main(int argc, char *argv[]){
                         }
                     }
                 }
-                /* set turn */
-                else if(command == ":-t")
-                {
-                    string msg;
-                    if(messages.size() < 7)
-                    {
-                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
-                        bot.send_com(msg);
-                        continue;
-                    }
-                    string user = messages[4];
-                    string passw = messages[5];
-                    core.enable_turn(user, passw);   
-                }
                 else if(command == ":mess")
                 {
                     string msg;
-                    if(messages.size() < 5)
+                    string uri;
+                    int start = 5;
+                    if(messages[4] == "-a")
                     {
-                        cout << "Wrong usage!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
-                        bot.send_com(msg);
-                        continue;
+                        if(messages.size() < 6)
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! mess -a <name> <text>\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                        if(!addrBook.addr_book_get_contact(messages[5]))
+                        {
+                            uri = addrBook.contactUri;
+                            start = 6;
+                        }   
+                        else
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :" + addrBook.dbMessage + "\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
                     }
-                    string uri = messages[4];
+                    else
+                    {
+                        if(messages.size() < 5)
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! mess <uri> <text>\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                        uri = messages[4];
+                        start = 5;
+                    }
                     chatRoom.create_chat_room(core._core, uri);
 
                     string chatMessage;
-                    for(int i = 5; i < messages.size(); i++)
+                    for(int i = start; i < messages.size(); i++)
                     {
                         chatMessage = chatMessage + " " + messages[i];
                     }
@@ -241,29 +267,39 @@ int main(int argc, char *argv[]){
                 else if(command == ":call")
                 {
                     string msg;
-                    if(messages.size() < 5)
+                    string uri;
+                    if(messages[4] == "-a")
                     {
-                        cout << "No sip uri provided!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :No sip uri provided!\r\n";
-                        bot.send_com(msg);
-                        continue;
+                        if(messages.size() < 6)
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :No sip uri provided! call <uri>\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                        if(!addrBook.addr_book_get_contact(messages[5]))
+                        {
+                            uri = addrBook.contactUri;
+                        }   
+                        else
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :" + addrBook.dbMessage + "\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
                     }
-                    if(messages.size() > 5)
+                    else
                     {
-                        cout << "Wrong usage!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
-                        bot.send_com(msg);
-                        continue;
+                        if(messages.size() < 5)
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :No sip uri provided! call -a <name>\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                        uri = messages[4];
                     }
 
-                    /* TODO: regex na check adresy , zjisteno ze jde volat i bez predpony sip:...*/
-
-                    string uri = messages[4];
-                    //TODO: Udelat check jestli je user zaregistrovany!
                     msg = "PRIVMSG " + bot.user_nick + " :Calling " + uri + "\r\n";
                     bot.send_com(msg);
-
-                    /* TODO: NAT routing v configs! */
                     int err = call.call_invite(core._core, uri);
                     if(err == 1)
                     {
@@ -272,66 +308,50 @@ int main(int argc, char *argv[]){
                         continue;
                     }
                     bot.outgoingCallee = uri;
-                    int ret = -1;
-                    bool aux = true;
-                    
-                    linphone_call_set_speaker_muted(call._call, false);
 
-                    /* TODO: Hodit do funkce */
-                    while (!(linphone_call_get_state(call._call) == LinphoneCallReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
-                    {
-                        core.iterate();
-                        if(linphone_call_get_state(call._call) == LinphoneCallConnected && aux)
-                        {
-                            msg = "PRIVMSG " + bot.user_nick + " :A call with " + uri + " is established!\r\n";
-                            bot.send_com(msg);
-                            callChat.create_call_chat_room(call._call);
-                            if(callChat.chat_room == nullptr)
-                            {
-                                cout << "Error creating chat romm!" << endl;
-                            }
-                            msg = "PRIVMSG " + bot.user_nick + " :Chat room established with " + uri + "!\r\n";
-                            bot.send_com(msg);
-                            linphone_call_set_speaker_muted(call._call, false);
-                            aux = false;
-                        }
-                        ret = bot.check_messages_during_call(&call, &core, &callChat);
-                        if(ret == 1)
-                        {
-                            break;
-                        }
-                    }
-                    
-                    msg = "PRIVMSG " + bot.user_nick + " :A call with " + uri + " ended!\r\n";
-                    bot.send_com(msg);
+                    bot.call_loop(&call, &core, &callChat, &addrBook, &proxy);
                 }
                 else if(command == ":register")
                 {
                     string msg;
-                    if(messages.size() != 6)
-                    {
-                        cout << "Wrong usage!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
-                        bot.send_com(msg);
-                        continue;
-                    }
 
                     if(proxy.proxy_cfg != nullptr && linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationOk)
                     {
-                        cout << "Already registered!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :Already registered!\r\n";
+                        msg = "PRIVMSG " + bot.user_nick + " :Already registered as " + bot.sipUsername + "!\r\n";
                         bot.send_com(msg);
                         continue;
                     }
-
-                    /* TODO: Check na uri */
-
-                    msg = "PRIVMSG " + bot.user_nick + " :Registering " + messages[4] + "\r\n";
-                    bot.send_com(msg);
-
-                    proxy.set_credentials(messages[4], messages[5]);
-                    bot.sipUsername = messages[4];
-
+                    if(messages[4] == "-a")
+                    {
+                        if(messages.size() != 6)
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! register -a <name>\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                        if(!addrBook.addr_book_get_registrar(messages[5]))
+                        {
+                            proxy.set_credentials(addrBook.regUri, addrBook.passw);
+                            bot.sipUsername = addrBook.regUri;
+                        }
+                        else
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :" + addrBook.dbMessage + "\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        if(messages.size() != 6)
+                        {
+                            msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! register <uri> <password>\r\n";
+                            bot.send_com(msg);
+                            continue;
+                        }
+                        proxy.set_credentials(messages[4], messages[5]);
+                        bot.sipUsername = messages[4];
+                    }
                     proxy.bot_register(core._core);
 
                     while((linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationOk)){
@@ -341,13 +361,11 @@ int main(int argc, char *argv[]){
                     
                     if(linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationOk)
                     {
-                        cout << "Succesfully registered!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :Succesfully registered!\r\n";
+                        msg = "PRIVMSG " + bot.user_nick + " :Succesfully registered as " + bot.sipUsername + "!\r\n";
                         bot.send_com(msg);
                     }
                     else
                     {
-                        cout << "Registration failed!" << endl;
                         msg = "PRIVMSG " + bot.user_nick + " :Registration failed!\r\n";
                         bot.send_com(msg);
                     }
@@ -358,14 +376,12 @@ int main(int argc, char *argv[]){
                     string msg;
                     if(proxy.proxy_cfg == nullptr)
                     {
-                        cout << "Not registered!" << endl;
                         msg = "PRIVMSG " + bot.user_nick + " :Not registered!\r\n";
                         bot.send_com(msg);
                         continue;
                     }
                     if(linphone_proxy_config_get_state(proxy.proxy_cfg) != LinphoneRegistrationOk)
                     {
-                        cout << "Not registered now!" << endl;
                         msg = "PRIVMSG " + bot.user_nick + " :Not registered!\r\n";
                         bot.send_com(msg);
                         continue;
@@ -382,14 +398,14 @@ int main(int argc, char *argv[]){
                     
                     if(linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationCleared)
                     {
-                        cout << "Succesfully unregistered!" << endl;
                         msg = "PRIVMSG " + bot.user_nick + " :Succesfully unregistered!\r\n";
                         bot.send_com(msg);
                         bot.sipUsername.clear();
+                        id_com = "PRIVMSG " + bot.user_nick + " :You are now as " + primCont + "!\r\n";
+                        bot.send_init_com(id_com);
                     }
                     else
                     {
-                        cout << "Unegistration failed!" << endl;
                         msg = "PRIVMSG " + bot.user_nick + " :Unegistration failed!\r\n";
                         bot.send_com(msg);
                     }
@@ -397,29 +413,11 @@ int main(int argc, char *argv[]){
                 }
                 else if(command == ":status")
                 {
-                    string msg;
-                    if(proxy.proxy_cfg == nullptr)
-                    {
-                        cout << "Not registered!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :Not registered!\r\n";
-                        bot.send_com(msg);
-                        continue;
-                    }
-                    if(linphone_proxy_config_get_state(proxy.proxy_cfg) != LinphoneRegistrationOk)
-                    {
-                        cout << "Not registered!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :Not registered!\r\n";
-                        bot.send_com(msg);
-                        continue;
-                    }
-                    else{
-                        cout << "Registered to:...!" << endl;
-                        msg = "PRIVMSG " + bot.user_nick + " :Registered to " + bot.sipUsername + "!\r\n";
-                        bot.send_com(msg);
-                    }
-                    /* TODO: Seznam prichozich hovoru */
-                    /* TODO: Vypsat primary contact */
-                    /* TODO: Vypsat aktualni hovor pokud je */
+                    bot.print_status(&core, &proxy);
+                }
+                else if(command == ":help")
+                {
+                    bot.print_help(messages);
                 }
                 else if(command == ":accept")
                 {
@@ -428,8 +426,7 @@ int main(int argc, char *argv[]){
                     {
                         if(messages.size() != 5)
                         {
-                            cout << "Wrong usage!" << endl;
-                            msg = "PRIVMSG " + bot.user_nick + " :Wrong usage!\r\n";
+                            msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! accept <number>\r\n";
                             bot.send_com(msg);
                             continue;
                         }
@@ -449,10 +446,11 @@ int main(int argc, char *argv[]){
                         }
 
                         int ret = linphone_call_accept(incomingCall);
+                        const LinphoneAddress *from = linphone_call_get_remote_address(incomingCall);
+                        bot.outgoingCallee =  string(linphone_address_as_string(from));
                         if(ret == 0)
                         {
-                            cout << "ACCEPTED!" << endl;
-                            msg = "PRIVMSG " + bot.user_nick + " :Accepted call from ...!\r\n";
+                            msg = "PRIVMSG " + bot.user_nick + " :Accepted call from " + bot.outgoingCallee + "!\r\n";
                             bot.send_com(msg);
                         }
                         else
@@ -463,6 +461,7 @@ int main(int argc, char *argv[]){
                         }
                         
                         call._call = incomingCall;
+                        /* TODO: Do funkce */
                         incomingCall = nullptr;
                         for(int i = 0; i < bot.incomingCallsVector.size(); i++)
                         {
@@ -475,36 +474,8 @@ int main(int argc, char *argv[]){
                         
                         linphone_call_set_speaker_muted(call._call, false);
                         linphone_core_enable_mic(core._core, true);
-                        bool aux = true;
-                        string msg;
-                        //call._calls.push_back(call._call);
-                        
-                        int exit = -1;
-                        /* TODO: Remote adresy */
-                        while (!(linphone_call_get_state(call._call) == LinphoneCallReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
-                        {
-                            core.iterate();
-                            if(linphone_call_get_state(call._call) == LinphoneCallConnected && aux)
-                            {
-                                msg = "PRIVMSG " + bot.user_nick + " :A call with is established!\r\n";
-                                bot.send_com(msg);
-                                callChat.create_call_chat_room(call._call);
-                                if(callChat.chat_room == nullptr)
-                                {
-                                    cout << "Error creating chat romm!" << endl;
-                                }
-                                msg = "PRIVMSG " + bot.user_nick + " :Chat room established with !\r\n";
-                                bot.send_com(msg);
-                                aux = false;
-                            }
-                            exit = bot.check_messages_during_call(&call, &core, &callChat);
-                            if(exit == 1)
-                            {
-                                break;
-                            }
-                        }
-                        msg = "PRIVMSG " + bot.user_nick + " :A call with ended!\r\n";
-                        bot.send_com(msg);
+
+                        bot.call_loop(&call, &core, &callChat, &addrBook, &proxy);
                     }
                     else
                     {
@@ -519,6 +490,7 @@ int main(int argc, char *argv[]){
                     if(incomingCall != nullptr)
                     {
                         int ret;
+                        /* TODO: Do funkce */
                         incomingCall = nullptr;
                         for(int i = 0; i < bot.incomingCallsVector.size(); i++)
                         {
@@ -549,13 +521,18 @@ int main(int argc, char *argv[]){
                     }
                 }
                 else{
-                    string msg = "PRIVMSG " + bot.user_nick + " :Unknown command!\r\n";
-                    bot.send_com(msg);
+                    if(!addrBook.addr_book_iterate(command, messages))
+                    {
+                        string msg = "PRIVMSG " + bot.user_nick + " :" + addrBook.dbMessage + "\r\n";
+                        bot.send_com(msg);
+                    }
+                    else
+                    {
+                        string msg = "PRIVMSG " + bot.user_nick + " :Unknown command! Use help for some guidance.\r\n";
+                        bot.send_com(msg);
+                    }
                 }
-                //TODO: adresar
-                /* adresar things */
             }
-            
             messages.clear();
         }
     }

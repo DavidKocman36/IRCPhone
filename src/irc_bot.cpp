@@ -8,8 +8,8 @@ irc_bot::irc_bot()
 void irc_bot::send_com(string command)
 {
     string auxMsg = "PRIVMSG " + user_nick + " : \r\n";
-    send(sockfd, auxMsg.c_str(), auxMsg.size(), 0);
     send(sockfd, command.c_str(), command.size(), 0);
+    send(sockfd, auxMsg.c_str(), auxMsg.size(), 0);
 }
 
 void irc_bot::send_init_com(string command)
@@ -48,24 +48,152 @@ void irc_bot::bot_terminate(irc_bot_core *core, irc_bot_proxy *proxy)
     send_com(msg);
 }
 
-
-//metoda pro volani adresaroveho API
-void address_book()
+void irc_bot::print_status(irc_bot_core *core, irc_bot_proxy *proxy)
 {
-    //if mess==add
-    //  add_address()
-    //else if mess==del
-    //  del_address()
-    //if mess==upd
-    //  upd_address()
+    string msg;
+    if(proxy->proxy_cfg == nullptr)
+    {
+        msg = "PRIVMSG " + user_nick + " :Not registered!\r\n";
+        send_init_com(msg);
+        const char *uri = linphone_core_get_primary_contact(core->_core);
+        msg = "PRIVMSG " + user_nick + " :Your uri: " + string(uri) + "!\r\n";
+        send_init_com(msg);
+    }
+    else
+    {
+        if(linphone_proxy_config_get_state(proxy->proxy_cfg) != LinphoneRegistrationOk)
+        {
+            msg = "PRIVMSG " + user_nick + " :Not registered!\r\n";
+            send_init_com(msg);
+            const char *uri = linphone_core_get_primary_contact(core->_core);
+            msg = "PRIVMSG " + user_nick + " :Your uri: " + string(uri) + "!\r\n";
+            send_init_com(msg);
+        }
+        else{
+            msg = "PRIVMSG " + user_nick + " :Registered as " + sipUsername + "!\r\n";
+            send_init_com(msg);
+        }
+    }
+    LinphoneCall *currCall = linphone_core_get_current_call(core->_core);
+    if(currCall != nullptr)
+    {
+        const char *callee = linphone_address_as_string(linphone_core_get_current_call_remote_address(core->_core));
+        msg = "PRIVMSG " + user_nick + " :In call with " + string(callee) + "!\r\n";
+        send_init_com(msg);
+    }
+    else
+    {
+        msg = "PRIVMSG " + user_nick + " :Not in a call!\r\n";
+        send_init_com(msg);
+    }
+    LinphoneNatPolicy *np = linphone_core_get_nat_policy(core->_core);
+    if(linphone_nat_policy_stun_enabled(np))
+    {
+        const char *stun = linphone_core_get_stun_server(core->_core);
+        msg = "PRIVMSG " + user_nick + " :STUN and ICE enabled: " + string(stun) + "!\r\n";
+        send_init_com(msg);
+        if(linphone_nat_policy_turn_enabled(np))
+        {
+            msg = "PRIVMSG " + user_nick + " :TURN enabled!\r\n";
+            send_com(msg);
+        }
+        else
+        {
+            msg = "PRIVMSG " + user_nick + " :TURN not enabled!\r\n";
+            send_com(msg);
+        }
+    }
+    else
+    {
+        msg = "PRIVMSG " + user_nick + " :STUN/TURN not enabled!\r\n";
+        send_com(msg);
+    }
+}
 
-    return;
+void irc_bot::print_help(vector<string> messages)
+{
+    string msg;
+    if(messages.size() > 4)
+    {
+        if(messages[4] == "o")
+        {
+            msg = "PRIVMSG " + user_nick + " :Options:\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    status: prints your status (registered, current call, your uri)\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -s <server> [-t <user> <passw>]: sets STUN/TURN server (-s) with its credentials (-t).\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    end: ends the bot. Also possible by CTRL+C in terminal.\r\n";
+            send_init_com(msg);
+        }
+        else if(messages[4] == "c")
+        {
+            msg = "PRIVMSG " + user_nick + " :Call commands:\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    call [-a <name>] <uri>: initiates a call to the given uri, with \"-a\" you can dial from contacts\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    accept <number>: accepts incoming call with the given order\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    decline: declines all incoming calls\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    hangup: hangs up current call\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    cancel: cancels outgoing call.\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    hold: holds current call.\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    resume: resumes current call.\r\n";
+            send_init_com(msg);
+        }
+        else if(messages[4] == "r")
+        {
+            msg = "PRIVMSG " + user_nick + " :Register commands:\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    register [-a <name>] <uri> <password>: registers your sip account, with \"-a\" you can register from database.\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    unregister: unregisters your sip account\r\n";
+            send_init_com(msg);
+        }
+        else if(messages[4] == "m")
+        {
+            msg = "PRIVMSG " + user_nick + " :Direct messages commands:\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    mess [-a <name>] <uri> <text>: sends a direct message to the given uri, with \"-a\" you can send to a uri from contacts.\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -m <text>: sends a direct message to the remote while in a call\r\n";
+            send_init_com(msg);
+        }
+        else if(messages[4] == "a")
+        {
+            msg = "PRIVMSG " + user_nick + " :Address book commands:\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -d, -c: drops the database (-d), creates the database (-c)\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -ic <name> <uri>: inserts a new contact\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -ir <name> <uri> <password>: inserts a new proxy identity\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -uc <name> <uri>: updated a contact\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -ur <name> <uri> <password>: updates a proxy identity. Type \"-\" for an attribute you dont want to change.\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -rc <name>, -rr <name>: remove a contact or proxy identity\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :NOTE: All <name> attributes must be unique!\r\n";
+            send_init_com(msg);
+        }
+    }
+    else
+    {
+        msg = "PRIVMSG " + user_nick + " :Usage: help <option>\r\n";
+        send_init_com(msg);
+        msg = "PRIVMSG " + user_nick + " :Options: o (options), c (call commands), r (register commands), m (instant message commands), a (address book commands)\r\n";
+        send_init_com(msg);
+    }
 }
 
 //metoda pro zachytavani zprav pri volani
-/* mozne zpravy pri volani: PING, call, call (pro hold), hangup ,accept, decline, adresarove fce  */
-/* bude volana v hlavnim loopu callu po Iterate funkci */
-int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, irc_bot_message *callChat)
+int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, irc_bot_message *callChat, addr_book *addrBook, irc_bot_proxy *proxy)
 {
     vector<string> messages;
     string msg;
@@ -104,7 +232,6 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
         }
         if(messages[1] == "PRIVMSG")
         {
-            //jako prvni zkusit implementovat odvhozi hovory
             vector<string> aux;
             split(messages[0], "!", aux);
             string correct_nick = ":" + user_nick;
@@ -145,6 +272,14 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
                 send_com(msg);
                 /* decline */
             }
+            else if(command == ":status")
+            {
+                print_status(core, proxy);
+            }
+            else if(command == ":help")
+            {
+                print_help(messages);
+            }
             else if(command == ":-m")
             {
                 string msg = "PRIVMSG " + user_nick + " :Sending a message\r\n";
@@ -161,7 +296,7 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
             {
                 if(call->_call != nullptr)
                 {
-                    string msg = "PRIVMSG " + user_nick + " :Hanging up!\r\n"; /*TODO: treba vypsat jaky hovor, nebo vsechny*/
+                    string msg = "PRIVMSG " + user_nick + " :Hanging up!\r\n";
                     send_com(msg);
                     outgoingCallee.clear();
                     /* TODO: Maybe terminate all? */
@@ -172,6 +307,7 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
             else if(command == ":cancel")
             {
                 /*init and ringing*/
+                /* TODO: fix this a bit */
                 if(call->_call != nullptr && (linphone_call_get_state(call->_call) == LinphoneCallOutgoingInit || linphone_call_get_state(call->_call) == LinphoneCallOutgoingRinging))
                 {
                     string msg = "PRIVMSG " + user_nick + " :Cancelling call to " + outgoingCallee + "\r\n";
@@ -207,14 +343,58 @@ int irc_bot::check_messages_during_call(irc_bot_call *call, irc_bot_core *core, 
 
             }
             else{
-                string msg = "PRIVMSG " + user_nick + " :Unknown command from call! If you want to send message, type with prefix \"-m\"\r\n";
-                send_com(msg);
+                if(!addrBook->addr_book_iterate(command, messages))
+                {
+                    string msg = "PRIVMSG " + user_nick + " :" + addrBook->dbMessage + "\r\n";
+                    send_com(msg);
+                }
+                else
+                {
+                    string msg = "PRIVMSG " + user_nick + " :Unknown command! If you want to send message, type with prefix \"-m\"\r\n";
+                    send_com(msg);
+                }
             }
-            //TODO: adresar
-            /* adresar things */
         }
         messages.clear();
     }
 
     return 0;
+}
+
+void irc_bot::call_loop(irc_bot_call *call, irc_bot_core *core, irc_bot_message *callChat, addr_book *addrBook,  irc_bot_proxy *proxy)
+{
+    int ret = -1;
+    bool aux = true;
+    string msg;
+
+    while (!(linphone_call_get_state(call->_call) == LinphoneCallReleased) && !(linphone_call_get_state(call->_call) == LinphoneCallStateError))
+    {
+        core->iterate();
+        if(linphone_call_get_state(call->_call) == LinphoneCallConnected && aux)
+        {
+            msg = "PRIVMSG " + user_nick + " :A call with " + outgoingCallee + " is established!\r\n";
+            send_com(msg);
+            callChat->create_call_chat_room(call->_call);
+            if(callChat->chat_room == nullptr)
+            {
+                msg = "PRIVMSG " + user_nick + " :Error creating chat room!\r\n";
+                send_com(msg);
+            }
+            msg = "PRIVMSG " + user_nick + " :Chat room established with " + outgoingCallee + "!\r\n";
+            send_com(msg);
+            linphone_call_set_speaker_muted(call->_call, false);
+            aux = false;
+        }
+        /**
+         * TODO: If call is paused by remote (send a message)
+        */
+        ret = check_messages_during_call(call, core, callChat, addrBook, proxy);
+        if(ret == 1)
+        {
+            break;
+        }
+    }
+    
+    msg = "PRIVMSG " + user_nick + " :A call with " + outgoingCallee + " ended!\r\n";
+    send_com(msg);
 }

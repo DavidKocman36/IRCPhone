@@ -2,4 +2,6 @@
 linphone-sdk/
 todo.txt
 conf/linphonerc
-db/address_book.db
+conf/linphonerc_copy.txt
+db/addr_book.db
+neco.txt

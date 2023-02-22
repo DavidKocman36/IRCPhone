@@ -19,9 +19,7 @@ int irc_bot_call::call_invite(LinphoneCore *lc ,string uri)
         cout << "Error calling " << uri << "!" << endl;
         return 1;
     }
-    cout << "Calling " << uri << "!" << endl;
     linphone_call_ref(this->_call);
-    //_calls.push_back(this->_call);
     return 0;
 }
 
@@ -33,9 +31,5 @@ void irc_bot_call::call_terminate()
         linphone_call_terminate(this->_call);
 	    /*at this stage we don't need the call object */
         linphone_call_unref(this->_call);
-        //TODO: ne vždy poslední pop back
-        //_calls.pop_back();
     }
 }
-
-/* ACCEPT and DENY*/
