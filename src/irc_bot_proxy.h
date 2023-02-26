@@ -22,7 +22,7 @@ public:
     irc_bot_proxy();
     ~irc_bot_proxy();
 
-    void bot_register(LinphoneCore *lc);
+    int bot_register(LinphoneCore *lc);
     void bot_unregister(LinphoneCore *lc);
     void set_credentials(string &user, string &passw);
 };

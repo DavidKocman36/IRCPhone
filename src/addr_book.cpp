@@ -35,7 +35,7 @@ int addr_book::addr_book_check(string &name, Option opt)
     struct sqlite3_stmt *selectstmt;
     int result;
 
-    if(opt == AddContact)
+    if(opt == Contact)
     {
         sql_str = "SELECT * from CONTACTS WHERE NAME='" + name + "'";
     }
@@ -132,9 +132,9 @@ int addr_book::addr_book_insert(string &name, string &uri, string &passw, Option
     char *zErrMsg = 0;
     string sql_str;
 
-    if(opt == AddContact)
+    if(opt == Contact)
     {
-        if(this->addr_book_check(name, AddContact))
+        if(this->addr_book_check(name, Contact))
         {
             this->dbMessage = "Contact already exists!";
             return 1;
@@ -144,7 +144,7 @@ int addr_book::addr_book_insert(string &name, string &uri, string &passw, Option
     }
     else
     {
-        if(this->addr_book_check(name, AddRegistrar))
+        if(this->addr_book_check(name, Registrar))
         {
             this->dbMessage = "Contact already exists!";
             return 1;
@@ -173,9 +173,9 @@ int addr_book::addr_book_delete(string &name, Option opt)
     char *zErrMsg = 0;
     string sql_str;
 
-    if(opt == AddContact)
+    if(opt == Contact)
     {
-        if(!this->addr_book_check(name, AddContact))
+        if(!this->addr_book_check(name, Contact))
         {
             this->dbMessage = "Contact doesnt exist!";
             return 1;
@@ -184,7 +184,7 @@ int addr_book::addr_book_delete(string &name, Option opt)
     }
     else
     {
-        if(!this->addr_book_check(name, AddRegistrar))
+        if(!this->addr_book_check(name, Registrar))
         {
             this->dbMessage = "Record desn't exist!";
             return 1;
@@ -213,9 +213,9 @@ int addr_book::addr_book_update(string &name, string &uri, string &passw, Option
     char *zErrMsg = 0;
     string sql_str;
 
-    if(opt == AddContact)
+    if(opt == Contact)
     {
-        if(!this->addr_book_check(name, AddContact))
+        if(!this->addr_book_check(name, Contact))
         {
             this->dbMessage = "Contact doesnt exist!";
             return 1;
@@ -224,7 +224,7 @@ int addr_book::addr_book_update(string &name, string &uri, string &passw, Option
     }
     else
     {
-        if(!this->addr_book_check(name, AddRegistrar))
+        if(!this->addr_book_check(name, Registrar))
         {
             this->dbMessage = "Record desn't exist!";
             return 1;
@@ -271,7 +271,7 @@ int addr_book::addr_book_get_contact(string &name)
     struct sqlite3_stmt *selectstmt;
     char *zErrMsg = 0;
 
-    if(!this->addr_book_check(name, AddContact))
+    if(!this->addr_book_check(name, Contact))
     {
         this->dbMessage = "Contact doesnt exist!";
         return 1;
@@ -305,7 +305,7 @@ int addr_book::addr_book_get_registrar(string &name)
     struct sqlite3_stmt *selectstmt;
     char *zErrMsg = 0;
 
-    if(!this->addr_book_check(name, AddRegistrar))
+    if(!this->addr_book_check(name, Registrar))
     {
         this->dbMessage = "Contact doesnt exist!";
         return 1;
@@ -357,7 +357,7 @@ int addr_book::addr_book_iterate(string &command, vector<string> messages)
             return 0;
         }
         string aux1 = "";
-        this->addr_book_insert(messages[4], messages[5], aux1, AddContact);
+        this->addr_book_insert(messages[4], messages[5], aux1, Contact);
         return 0;
     }
     //insert to registrar (proxy)
@@ -368,7 +368,7 @@ int addr_book::addr_book_iterate(string &command, vector<string> messages)
             this->dbMessage = "Wrong usage! -rc <name> <proxy_uri> <password>";
             return 0;
         }
-        this->addr_book_insert(messages[4], messages[5], messages[6], AddRegistrar);
+        this->addr_book_insert(messages[4], messages[5], messages[6], Registrar);
         return 0;
     }
     //update contacts
@@ -380,7 +380,7 @@ int addr_book::addr_book_iterate(string &command, vector<string> messages)
             return 0;
         }
         string aux1 = "";
-        this->addr_book_update(messages[4], messages[5], aux1, AddContact);
+        this->addr_book_update(messages[4], messages[5], aux1, Contact);
         return 0;
     }
     //update registrar (proxy)
@@ -393,7 +393,7 @@ int addr_book::addr_book_iterate(string &command, vector<string> messages)
             "If you wish to not update an attribute, type \"-\" instead e.g. \"-ur name - password\"";
             return 0;
         }
-        this->addr_book_update(messages[4], messages[5], messages[6], AddRegistrar);
+        this->addr_book_update(messages[4], messages[5], messages[6], Registrar);
         return 0;
     }
     //remove from contacts
@@ -404,7 +404,7 @@ int addr_book::addr_book_iterate(string &command, vector<string> messages)
             this->dbMessage = "Wrong usage! -rc <name>";
             return 0;
         }
-        this->addr_book_delete(messages[4], AddContact);
+        this->addr_book_delete(messages[4], Contact);
         return 0;
     }
     //remove from (proxy)
@@ -415,15 +415,125 @@ int addr_book::addr_book_iterate(string &command, vector<string> messages)
             this->dbMessage = "Wrong usage! -rr <name>";
             return 0;
         }
-        this->addr_book_delete(messages[4], AddRegistrar);
+        this->addr_book_delete(messages[4], Registrar);
         return 0;
     }
     //drop tables
-    if(command == ":-d")
+    if(command == ":-dropdb")
     {
         this->addr_book_drop();
         return 0;
     }
 
     return 1;
+}
+
+int addr_book::addr_book_get_data(vector<string> messages, Option opt)
+{
+    string sql_str;
+    struct sqlite3_stmt *selectstmt;
+    char *zErrMsg = 0;
+    Data data;
+
+    if(messages.size() > 4)
+    {
+        if(opt == Contact)
+            sql_str = "SELECT NAME,URI from CONTACTS WHERE NAME LIKE '" + messages[4] + "';";
+        else
+            sql_str = "SELECT NAME,URI from REGISTRAR WHERE NAME LIKE '" + messages[4] + "';";
+    }
+    else
+    {
+        if(opt == Contact)
+            sql_str = "SELECT NAME,URI from CONTACTS;";
+        else
+            sql_str = "SELECT NAME,URI from REGISTRAR;";
+    }
+
+    const char *sql = sql_str.c_str();
+
+    int result = sqlite3_prepare_v2(db, sql, -1, &selectstmt, NULL);
+    if(result == SQLITE_OK)
+    {
+       while(sqlite3_step(selectstmt) == SQLITE_ROW)
+       {
+            data.name = string(reinterpret_cast<const char*>(sqlite3_column_text(selectstmt, 0)));
+            data.uri = string(reinterpret_cast<const char*>(sqlite3_column_text(selectstmt, 1)));
+            this->dbData.push_back(data);
+       }
+    }
+    else
+    {
+        this->dbMessage = "SQL error: " + string(zErrMsg) + "!";
+        sqlite3_free(zErrMsg);
+        return 1;
+    }
+    sqlite3_finalize(selectstmt);
+    return 0;
+}
+
+string addr_book::get_enum_uri(vector<string> messages)
+{
+    string number = messages[5];
+    if (number.rfind("00", 0) == 0)
+    { 
+        number.erase(0,2);
+    }
+
+    string revNum = "";
+    int j = 0;
+    for(int i = number.length() - 1; i >= 0; i--)
+    {
+        if(!isdigit(number[i]))
+            continue;
+        revNum.push_back(number[i]);
+        revNum += ".";
+
+    }
+    revNum += "e164.arpa.";
+
+    FILE *fp;
+    FILE *fd;
+    char path[1024];
+
+    string comm_str = "dig -t naptr " + revNum + " | grep -o \"E2U+sip.*\"";
+    const char* comm_dig = comm_str.c_str();
+
+    fp = popen(comm_dig, "r");
+    if (fp == NULL)
+        return "";
+
+    string res;
+    while (fgets(path, 1024, fp) != NULL)
+        res += string(path);
+
+    if(res.empty())
+    {
+        pclose(fp);
+        return "";
+    }
+
+    vector<string> parts;
+    split(res, "!", parts);
+    parts.erase(parts.begin());
+
+    findAndReplaceAll(parts[0], "\\\\", "\\");
+    findAndReplaceAll(parts[1], "\\\\", "\\");
+
+    comm_str = "echo \"" + number + "\" | sed -E 's/" + parts[0] + "/" + parts[1] + "/g'";
+    const char* comm_sed = comm_str.c_str();
+    fd = popen(comm_sed, "r");
+    if (fd == NULL)
+        return "";
+
+    string uri;
+    while (fgets(path, 1024, fd) != NULL)
+        uri += string(path);
+
+    uri.erase(uri.length()-1);
+
+    pclose(fp);
+    pclose(fd);
+
+    return uri;
 }

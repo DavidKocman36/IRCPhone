@@ -9,5 +9,6 @@
 using namespace std;
 
 void split(const string& str, const string& delim, vector<string>& parts);
+void findAndReplaceAll(string & data, string toSearch, string replaceStr);
 
 #endif

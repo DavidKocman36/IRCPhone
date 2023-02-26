@@ -2,19 +2,33 @@
 #define IRC_BOT_CORE_H
 
 #include <linphone/linphonecore.h>
+#include <algorithm>
+#include <vector>
+#include "irc_bot_call.h"
 
 using namespace std;
+
+struct IncCall
+{
+    /*Reference to the incoming call*/
+    LinphoneCall *call;
+    /*Whether still ringing or not*/
+    int status;
+};
 
 /* Message used to notify user when someone is calling */
 extern string incomingCallMessage;
 extern string incomingChatMessage;
+extern string remoteHungUp;
 /*  */
 extern LinphoneCall *incomingCall;
+
+extern vector<irc_bot_call>callsVector;
+extern vector<IncCall>incomingCallsVector;
 
 class irc_bot_core
 {
 public:
-    LinphoneCoreVTable vTable = {0}; //might not be needed
     LinphoneFactory *_factory;
     LinphoneCore *_core;
     LinphoneCoreCbs *_cbs;

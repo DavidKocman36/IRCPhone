@@ -12,57 +12,75 @@ irc_bot_core::~irc_bot_core()
 
 string incomingCallMessage;
 string incomingChatMessage;
+string remoteHungUp;
 LinphoneCall *incomingCall;
 const LinphoneAddress *from;
 const char *user;
 const char *domain;
+vector<irc_bot_call>callsVector;
+vector<IncCall>incomingCallsVector;
+string remote;
+
+IncCall incCall;
+IncCall auxCall;
+
+irc_bot_call aux;
 
 
 /* TODO: Dodelat callbacks na CONNECTED, OUTGOING a INCOMING */
 static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCallState cstate, const char *msg){
 	switch(cstate){
-        case LinphoneCallIncomingReceived:
-			printf("A call is here!!!!!\n");
-            //linphone_call_accept(call);
+        case LinphoneCallStateIncomingReceived:
             from = linphone_call_get_remote_address(call);
             user = linphone_address_get_username(from);
             domain = linphone_address_get_domain(from);
             incomingCallMessage = string(user) + "@" + string(domain) + string(" is calling!");
             incomingCall = call;
-            cout << endl << incomingCallMessage << endl;
+            incCall.call = call;
+            incCall.status = 1;
+            incomingCallsVector.push_back(incCall);
             break;
         case LinphoneCallStateOutgoingInit:
             printf("Started the call!\n");
             break;
-		case LinphoneCallOutgoingRinging:
+		case LinphoneCallStateOutgoingRinging:
 			printf("It is now ringing remotely !\n");
 		    break;
-		case LinphoneCallOutgoingEarlyMedia:
+		case LinphoneCallStateOutgoingEarlyMedia:
 			printf("Receiving some early media\n");
 		    break;
-		case LinphoneCallConnected:
+		case LinphoneCallStateConnected:
 			printf("We are connected !\n");
 		    break;
-		case LinphoneCallStreamsRunning:
+		case LinphoneCallStateStreamsRunning:
 			printf("Media streams established !\n");
 		    break;
         case LinphoneCallStatePausing:
             break;
         case LinphoneCallStatePaused:
-            //linphone_call_resume(call);
             break;
-		case LinphoneCallEnd:
+		case LinphoneCallStateEnd:
 			printf("Call is terminated.\n");
 		    break;
-		case LinphoneCallError:
-			printf("Call failure !\n");
-            if(incomingCall != nullptr)
-            {
-                incomingCall = nullptr;
-                incomingCallMessage = string(user) + "@" + string(domain) + string(" is not calling anymore!");
-            }
+        case LinphoneCallStateReferred:
+            callsVector.pop_back();
             break;
-        case LinphoneCallReleased:
+		case LinphoneCallStateError:
+			printf("Call failure !\n");
+            for(int i = 0; i < incomingCallsVector.size(); i++)
+            {
+                auxCall = incomingCallsVector.at(i);
+                if(auxCall.status == 1 && auxCall.call == call)
+                {
+                    auxCall.status = 0;
+                    incomingCallsVector.at(i) = auxCall;
+                }
+            }
+            //remote hung up message
+            from = linphone_call_get_remote_address(call);
+            remoteHungUp = "A call from " + string(linphone_address_as_string(from)) + " is terminated!";
+            break;
+        case LinphoneCallStateReleased:
             printf("Call is released!\n");
 		    break;
 		default:
@@ -71,7 +89,6 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
 }
 
 static void registration_state_changed(struct _LinphoneCore *lc, LinphoneProxyConfig *cfg, LinphoneRegistrationState cstate, const char *message){
-        /* TODO: deprecated */
 		printf("New registration state %s for user id [%s] at proxy [%s]\n"
 				,linphone_registration_state_to_string(cstate)
 				,linphone_proxy_config_get_identity(cfg)
@@ -80,7 +97,6 @@ static void registration_state_changed(struct _LinphoneCore *lc, LinphoneProxyCo
 
 
 void text_received(LinphoneCore *lc, LinphoneChatRoom *room, LinphoneChatMessage *message) {
-    //printf(" Message [%s] received from [%s] \n", linphone_chat_message_get_text(message) , linphone_address_as_string(linphone_chat_room_get_peer_address(room)));
     string aux = string(linphone_address_as_string(linphone_chat_room_get_peer_address(room))) + ": " + string(linphone_chat_message_get_text(message));
     incomingChatMessage = aux;
 }

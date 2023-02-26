@@ -1,17 +1,24 @@
 #ifndef ADDR_BOOK_H
 #define ADDR_BOOK_H
 
+#include <stdio.h>
 #include <iostream>
 #include <sqlite3.h>
 #include <vector>
 #include <string>
+#include "my_string.h"
 
 using namespace std;
 
 enum Option
 {
-    AddContact = 0,
-    AddRegistrar = 1
+    Contact = 0,
+    Registrar = 1
+};
+
+struct Data{
+    string name;
+    string uri;
 };
 
 class addr_book
@@ -23,6 +30,8 @@ public:
     string contactUri;
     string regUri;
     string passw;
+
+    vector<Data> dbData;
 
     addr_book(/* args */);
     ~addr_book();
@@ -46,6 +55,10 @@ public:
 
     int addr_book_create(); //
     int addr_book_drop(); //
+
+    int addr_book_get_data(vector<string> messages, Option opt);
+
+    string get_enum_uri(vector<string> messages);
 };
 
 

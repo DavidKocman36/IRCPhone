@@ -21,10 +21,8 @@ void irc_bot_proxy::set_credentials(string &user, string &passw)
     this->passw = passw.c_str();
 }
 
-void irc_bot_proxy::bot_register(LinphoneCore *lc)
+int irc_bot_proxy::bot_register(LinphoneCore *lc)
 {
-    /* TODO: make return a number for error handling */
-
     /*create proxy config*/
     this->proxy_cfg = linphone_core_create_proxy_config(lc);
     linphone_core_clear_proxy_config(lc);
@@ -32,7 +30,7 @@ void irc_bot_proxy::bot_register(LinphoneCore *lc)
     this->from = linphone_address_new(this->user);
     if (this->from == nullptr){
         printf("%s not a valid sip uri, must be like sip:toto@sip.linphone.org \n",this->user);
-        return;
+        return 1;
     }
     if (this->passw != nullptr){
         this->info=linphone_auth_info_new(linphone_address_get_username(this->from),NULL,this->passw,NULL,NULL,NULL); /*create authentication structure from identity*/
@@ -46,6 +44,7 @@ void irc_bot_proxy::bot_register(LinphoneCore *lc)
     linphone_address_unref(this->from); /*release resource*/
     linphone_core_add_proxy_config(lc, this->proxy_cfg); /*add proxy config to linphone core*/
     linphone_core_set_default_proxy_config(lc, this->proxy_cfg);
+    return 0;
 }
 
 void irc_bot_proxy::bot_unregister(LinphoneCore *lc)
