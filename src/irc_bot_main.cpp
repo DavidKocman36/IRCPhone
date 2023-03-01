@@ -1,3 +1,20 @@
+/*
+ * This file is part of IRCPhone
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "irc_bot.h"
 
 irc_bot bot;
@@ -8,11 +25,10 @@ irc_bot_message callChat;
 addr_book addrBook;
 irc_bot_message chatRoom;
 
+/* The CTRL+C termination */
 static void stop(int signum){
     addrBook.addr_book_close();
 	bot.bot_terminate(&core, &proxy);
-    string quit_com = "QUIT\r\n";
-    bot.send_init_com(quit_com);
     exit(0);
 }
 
@@ -27,18 +43,23 @@ int main(int argc, char *argv[]){
 
     signal(SIGINT, stop);
 
-    core.core_create();
+    int coreErr = core.core_create();
+    if(coreErr)
+    {
+        return 1;
+    }
     //linphone_core_set_log_file(NULL);
 	//linphone_core_set_log_level(ORTP_MESSAGE);
 
+    /* Set some linphone options */
     linphone_core_enable_adaptive_rate_control(core._core, true);
     linphone_core_enable_mic(core._core, true);
     linphone_core_set_audio_port_range(core._core, 7077, 8000);
     linphone_core_set_play_file(core._core, "./sounds/toy-mono.wav");
     linphone_core_set_ring(core._core, "./sounds/ringback.wav");
-    linphone_core_set_max_calls(core._core, 5);
     const char *primCont = linphone_core_get_primary_contact(core._core);
 
+    /* Open the database handle */
     int er = addrBook.addr_book_open();
     if(er) {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(addrBook.db));
@@ -62,7 +83,7 @@ int main(int argc, char *argv[]){
 
     bot.nick = bot.user_nick + "_b";
 
-    //resolve hostname
+    /* Resolve hostname */
     struct hostent *he;    
     if ( (he = gethostbyname(bot.server.c_str()) ) == NULL ) {
         exit(1); 
@@ -74,6 +95,7 @@ int main(int argc, char *argv[]){
         perror("Socket:");
         return 1;
     }
+    /* Set receive timeout */
     struct timeval timeout;      
     timeout.tv_sec = 0;
     timeout.tv_usec = 10000;
@@ -82,7 +104,7 @@ int main(int argc, char *argv[]){
     {
         perror("Setsockopt: \n");
     }
-        
+    /* Connect to the server */ 
     struct sockaddr_in irc_server;
     irc_server.sin_family = AF_INET;
     irc_server.sin_port = htons(6667);
@@ -98,7 +120,7 @@ int main(int argc, char *argv[]){
     }
 
     char buffer[4096];
-
+    /* Send all the initial commands */
     string channel_com = "JOIN " + bot.channel + "\r\n";
     string password_com = "PASS " + bot.password + "\r\n";
     string user_com = "USER " + bot.nick + " 0 * :" + bot.user_nick + "\r\n";
@@ -118,6 +140,7 @@ int main(int argc, char *argv[]){
     while(42)
     {
         core.iterate();
+        /* Let the user know if an incoming call comes */
         if(!incomingCallMessage.empty())
         {
             bot.order += 1;
@@ -125,46 +148,50 @@ int main(int argc, char *argv[]){
             bot.send_com(msg);
             incomingCallMessage.clear();
         }
+        /* Let the user know if a message comes */
         if(!incomingChatMessage.empty())
         {
             string msg = "PRIVMSG " + bot.user_nick + " :" + incomingChatMessage + "\r\n";
             bot.send_com(msg);
             incomingChatMessage.clear();
         }
+        /* Let the user know if remote or user hung up a call */
         if(!remoteHungUp.empty())
         {
             string msg = "PRIVMSG " + bot.user_nick + " :" + remoteHungUp + "\r\n";
             bot.send_com(msg);
             remoteHungUp.clear();
-        }
+        }  
 
+        /* Receive commands */
         bytes_recieved = recv(bot.sockfd, buffer, 4096, 0);
         if(bytes_recieved > 0)
         {
             messages.clear();
             ircMsg = string(buffer, 0, bytes_recieved);
             memset(buffer, 0, sizeof buffer);
-            cout << ircMsg;
+            //cout << ircMsg;
 
             // trim of the "\r\n" for better command handling
             ircMsg.resize(ircMsg.length() - 2);
             split(ircMsg, " ", messages);
 
+            /* On some servers send JOIN command after MODE command */
             if(std::find(messages.begin(), messages.end(), "MODE") != messages.end()) 
             {
                 bot.send_com(channel_com);
             }
 
+            /* If error occurs end the bot */
             if(std::find(messages.begin(), messages.end(), "ERROR") != messages.end()) 
             {
                 //dealloc if needed
                 addrBook.addr_book_close();
                 bot.bot_terminate(&core, &proxy);
-                string quit_com = "QUIT\r\n";
-                bot.send_init_com(quit_com);
                 return 0;
             }
 
+            /* Respond to PING */
             if(messages[0] == "PING")
             {
                 string pong = "PONG " + messages[1] + "\r\n";
@@ -172,28 +199,24 @@ int main(int argc, char *argv[]){
             }
             if(messages[1] == "PRIVMSG")
             {
-                
-                cout << ircMsg << endl; 
                 vector<string> aux;
                 split(messages[0], "!", aux);
                 string correct_nick = ":" + bot.user_nick;
-
+                /* Ignore other users */
                 if((aux[0] != correct_nick) || (messages[2] != bot.nick))
                 {
                     continue;
                 }
 
                 string command = messages[3];
-                /*end*/
+                /* End the bot */
                 if(command == ":end") 
                 {
                     addrBook.addr_book_close();
                     bot.bot_terminate(&core, &proxy);
-                    string quit_com = "QUIT\r\n";
-                    bot.send_init_com(quit_com);
                     return 0;
                 }
-                /* set stun and turn */
+                /* Set stun and turn */
                 else if(command == ":-s")
                 {
                     string msg;
@@ -221,11 +244,13 @@ int main(int argc, char *argv[]){
                         }
                     }
                 }
+                /* Send a message */
                 else if(command == ":mess")
                 {
                     string msg;
                     string uri;
                     int start = 5;
+                    /* Send to a remote in contacts */
                     if(messages[4] == "-a")
                     {
                         if(messages.size() < 6)
@@ -260,6 +285,7 @@ int main(int argc, char *argv[]){
                     chatRoom.create_chat_room(core._core, uri);
 
                     string chatMessage;
+                    /* Create and send the message */
                     for(int i = start; i < messages.size(); i++)
                     {
                         chatMessage = chatMessage + " " + messages[i];
@@ -270,11 +296,13 @@ int main(int argc, char *argv[]){
                 }
                 else if(command == ":call")
                 {
+                    /* Make a call */
                     bot.call(messages, currentCall, core, callChat, addrBook, proxy, 0);
                     callsVector.clear();
                 }
                 else if(command == ":register")
                 {
+                    /* Register at a proxy */
                     string msg;
 
                     if(proxy.proxy_cfg != nullptr && linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationOk)
@@ -285,6 +313,7 @@ int main(int argc, char *argv[]){
                     }
                     if(messages[4] == "-a")
                     {
+                        /* Register with credentials stored in database */
                         if(messages.size() != 6)
                         {
                             msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! register -a <name>\r\n";
@@ -322,11 +351,13 @@ int main(int argc, char *argv[]){
                         continue;
                     }
 
+                    /* Register */
                     while((linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationOk)){
                         core.iterate();
                         usleep(20000);
                     }
                     
+                    /* Confirm the registration */
                     if(linphone_proxy_config_get_state(proxy.proxy_cfg) == LinphoneRegistrationOk)
                     {
                         msg = "PRIVMSG " + bot.user_nick + " :Succesfully registered as " + bot.sipUsername + "!\r\n";
@@ -341,6 +372,7 @@ int main(int argc, char *argv[]){
                 }
                 else if(command == ":unregister")
                 {
+                    /* Unregister from a proxy */
                     string msg;
                     if(proxy.proxy_cfg == nullptr)
                     {
@@ -387,8 +419,16 @@ int main(int argc, char *argv[]){
                 {
                     bot.print_help(messages);
                 }
+                else if(command == ":hangup")
+                {
+                    /* Invalid hangup */
+                    string msg;
+                    msg = "PRIVMSG " + bot.user_nick + " :Not in a call!\r\n";
+                    bot.send_com(msg);
+                }
                 else if(command == ":accept")
                 {
+                    /* Accept a call if exists */
                     string msg;
                     if(incomingCall != nullptr)
                     {
@@ -406,12 +446,13 @@ int main(int argc, char *argv[]){
                     bot.decline_func();
                 }
                 else{
+                    /* Address book commands */
                     if(!addrBook.addr_book_iterate(command, messages))
                     {
                         string msg = "PRIVMSG " + bot.user_nick + " :" + addrBook.dbMessage + "\r\n";
                         bot.send_com(msg);
                     }
-                    //get data and print
+                    /* Browse database */
                     else if(command == ":-con")
                     {
                         addrBook.addr_book_get_data(messages, Contact);

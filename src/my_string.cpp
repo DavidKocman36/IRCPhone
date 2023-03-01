@@ -1,9 +1,25 @@
-#include "my_string.h"
 /**
+ * /*
+ * This file is part of IRCPhone
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
  * A cpp file containing all string methonds not present as a standard c++ feature
 */
 
-//split string
+#include "my_string.h"
+
 //src: https://stackoverflow.com/questions/289347/using-strtok-with-a-stdstring
 void split(const string& str, const string& delim, vector<string>& parts) {
     size_t start, end = 0;
@@ -35,4 +51,17 @@ void findAndReplaceAll(string & data, string toSearch, string replaceStr)
         // Get the next occurrence from the current position
         pos =data.find(toSearch, pos + replaceStr.size());
     }
+}
+
+bool strIsDigit(string &str)
+{
+    /* Iterate over the whole string */
+    for(int i = 0; i < str.length(); i++)
+    {
+        /* If a single character is not a number the functions returns false */
+        if(!isdigit(str[i]))
+            return false;
+    }
+
+    return true;
 }

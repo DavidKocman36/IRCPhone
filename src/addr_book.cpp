@@ -1,4 +1,19 @@
-/**
+/*
+ * This file is part of IRCPhone
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
  * A cpp file including an address book database API
  * resource: https://www.tutorialspoint.com/sqlite/sqlite_c_cpp.htm
 */
@@ -53,10 +68,11 @@ int addr_book::addr_book_check(string &name, Option opt)
     result = sqlite3_prepare_v2(db, sql, -1, &selectstmt, NULL);
     if(result == SQLITE_OK)
     {
-       if (sqlite3_step(selectstmt) == SQLITE_ROW)
-       {
-          return 1;
-       }
+        /* If nothing went wrong we will check whether step contains a row. If it does that means the record exists already. */
+        if (sqlite3_step(selectstmt) == SQLITE_ROW)
+        {
+            return 1;
+        }
     }
     else
     {
@@ -73,7 +89,34 @@ int addr_book::addr_book_create()
     char *zErrMsg = 0;
     char *sql;
     int rc;
+    string sql_str;
+    struct sqlite3_stmt *selectstmt;
+    int result;
+    
+    /* First check if the tables are already created. */
+    sql_str = "SELECT name FROM sqlite_master WHERE type='table' AND name='CONTACTS' OR name='REGISTRAR';";
+    const char *sql_select = sql_str.c_str();
+    
+    result = sqlite3_prepare_v2(this->db, sql_select, -1, &selectstmt, NULL);
+    if(result == SQLITE_OK)
+    {
+        if (sqlite3_step(selectstmt) == SQLITE_ROW)
+        {
+            this->dbMessage = "Tables already exist! Drop the db first using \"-dropdb\"!";
+            return 1;
+        }
+    }
+    else
+    {
+        this->dbMessage = "SQL error: " + string(zErrMsg) + "!";
+        sqlite3_free(zErrMsg);
+        return 1;
+    }
+    sqlite3_finalize(selectstmt);
 
+    /* If they are not created then create them. Here is also a second layer of security 
+     * in the form of "IF NOT EXISTS" statement.
+     */
     sql = "CREATE TABLE IF NOT EXISTS CONTACTS("  \
       "ID         INTEGER      PRIMARY KEY," \
       "NAME       CHAR(150)    NOT NULL," \
@@ -106,7 +149,7 @@ int addr_book::addr_book_create()
     return 0;
 }
 
-int addr_book::addr_book_drop()
+void addr_book::addr_book_drop()
 {
     char *zErrMsg = 0;
     char *sql;
@@ -132,6 +175,7 @@ int addr_book::addr_book_insert(string &name, string &uri, string &passw, Option
     char *zErrMsg = 0;
     string sql_str;
 
+    /* Based on what kind of data we want to insert the SELECT statement is modified. */
     if(opt == Contact)
     {
         if(this->addr_book_check(name, Contact))
@@ -154,6 +198,7 @@ int addr_book::addr_book_insert(string &name, string &uri, string &passw, Option
     }
 
     const char *sql = sql_str.c_str();
+    /* Insert */
     int rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
 
     if( rc != SQLITE_OK )
@@ -224,6 +269,7 @@ int addr_book::addr_book_update(string &name, string &uri, string &passw, Option
     }
     else
     {
+        /* Make the corresponding SELECT statement based on what attributes user wants to change. */
         if(!this->addr_book_check(name, Registrar))
         {
             this->dbMessage = "Record desn't exist!";
@@ -283,10 +329,11 @@ int addr_book::addr_book_get_contact(string &name)
     int result = sqlite3_prepare_v2(db, sql, -1, &selectstmt, NULL);
     if(result == SQLITE_OK)
     {
-       if (sqlite3_step(selectstmt) == SQLITE_ROW)
-       {
-          this->contactUri = string(reinterpret_cast<const char*>(sqlite3_column_text(selectstmt, 0)));
-       }
+        /* The SELECT shall always return only one row because the name is always unique. */
+        if (sqlite3_step(selectstmt) == SQLITE_ROW)
+        {
+            this->contactUri = string(reinterpret_cast<const char*>(sqlite3_column_text(selectstmt, 0)));
+        }
     }
     else
     {
@@ -333,14 +380,11 @@ int addr_book::addr_book_get_registrar(string &name)
     return 0;
 }
 
-/**
- * Returns always 0 because the command is valid so no "Unknown command!" message is sent
-*/
 int addr_book::addr_book_iterate(string &command, vector<string> messages)
 {
     /**
-     * TODO: command for printing contacts
-    */
+     * Returns always 0 because the command is valid so no "Unknown command!" message is sent
+     */
 
     //insert
     if(command == ":-c")
@@ -435,6 +479,7 @@ int addr_book::addr_book_get_data(vector<string> messages, Option opt)
     char *zErrMsg = 0;
     Data data;
 
+    /* Here is also the possibility of adding sqlite regex for better search */
     if(messages.size() > 4)
     {
         if(opt == Contact)
@@ -455,12 +500,13 @@ int addr_book::addr_book_get_data(vector<string> messages, Option opt)
     int result = sqlite3_prepare_v2(db, sql, -1, &selectstmt, NULL);
     if(result == SQLITE_OK)
     {
-       while(sqlite3_step(selectstmt) == SQLITE_ROW)
-       {
+        /* For both proxy and contact we only get name and uri. Password is not retreived. */
+        while(sqlite3_step(selectstmt) == SQLITE_ROW)
+        {
             data.name = string(reinterpret_cast<const char*>(sqlite3_column_text(selectstmt, 0)));
             data.uri = string(reinterpret_cast<const char*>(sqlite3_column_text(selectstmt, 1)));
             this->dbData.push_back(data);
-       }
+        }
     }
     else
     {
@@ -475,6 +521,7 @@ int addr_book::addr_book_get_data(vector<string> messages, Option opt)
 string addr_book::get_enum_uri(vector<string> messages)
 {
     string number = messages[5];
+    /* If number starts with 00 then zeros are trimmed. */
     if (number.rfind("00", 0) == 0)
     { 
         number.erase(0,2);
@@ -482,6 +529,9 @@ string addr_book::get_enum_uri(vector<string> messages)
 
     string revNum = "";
     int j = 0;
+    /* Revert the number, get rid of all non numeric values and concatenate
+     * e164.arpa. suffix.
+     */
     for(int i = number.length() - 1; i >= 0; i--)
     {
         if(!isdigit(number[i]))
@@ -496,6 +546,7 @@ string addr_book::get_enum_uri(vector<string> messages)
     FILE *fd;
     char path[1024];
 
+    /* Retrieve a NAPTR record with the sip uri. */
     string comm_str = "dig -t naptr " + revNum + " | grep -o \"E2U+sip.*\"";
     const char* comm_dig = comm_str.c_str();
 
@@ -507,19 +558,25 @@ string addr_book::get_enum_uri(vector<string> messages)
     while (fgets(path, 1024, fp) != NULL)
         res += string(path);
 
+    /* If NAPTR record doesnt exist for the corresponding number then return empty string */
     if(res.empty())
     {
         pclose(fp);
         return "";
     }
 
+    /* Split the regex and the substitution of the uri */
+    /* https://superuser.com/questions/1278979/understanding-wildcards-in-enum-responses */
     vector<string> parts;
     split(res, "!", parts);
+    /* Erase a redundant part of the response */
     parts.erase(parts.begin());
 
+    /* Replace all \\ with just \ */
     findAndReplaceAll(parts[0], "\\\\", "\\");
     findAndReplaceAll(parts[1], "\\\\", "\\");
 
+    /* Create the corresponding sip uri */
     comm_str = "echo \"" + number + "\" | sed -E 's/" + parts[0] + "/" + parts[1] + "/g'";
     const char* comm_sed = comm_str.c_str();
     fd = popen(comm_sed, "r");

@@ -1,3 +1,20 @@
+/*
+ * This file is part of IRCPhone
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "irc_bot.h"
 
 irc_bot::irc_bot()
@@ -10,6 +27,7 @@ void irc_bot::send_com(string command)
 {
     string auxMsg = "PRIVMSG " + user_nick + " : \r\n";
     send(sockfd, command.c_str(), command.size(), 0);
+    /* The empty lina */
     send(sockfd, auxMsg.c_str(), auxMsg.size(), 0);
 }
 
@@ -22,6 +40,7 @@ void irc_bot::bot_terminate(irc_bot_core *core, irc_bot_proxy *proxy)
 {
     string msg;
 
+    /* Unregister if registered */
     if(proxy->proxy_cfg != nullptr && linphone_proxy_config_get_state(proxy->proxy_cfg) == LinphoneRegistrationOk)
     {
         proxy->bot_unregister(core->_core);
@@ -44,14 +63,18 @@ void irc_bot::bot_terminate(irc_bot_core *core, irc_bot_proxy *proxy)
         }
     }
     
+    /* Destroy the core and send farewell message */
     core->core_destroy();
     msg = "PRIVMSG " + user_nick + " :Bot is ending, bye!\r\n";
     send_com(msg);
+    string quit_com = "QUIT\r\n";
+    send_init_com(quit_com);
 }
 
 void irc_bot::print_status(irc_bot_core *core, irc_bot_proxy *proxy)
 {
     string msg;
+    /* If registered */
     if(proxy->proxy_cfg == nullptr)
     {
         msg = "PRIVMSG " + user_nick + " :Not registered!\r\n";
@@ -75,18 +98,35 @@ void irc_bot::print_status(irc_bot_core *core, irc_bot_proxy *proxy)
             send_init_com(msg);
         }
     }
+    /* If in an active call */
     LinphoneCall *currCall = linphone_core_get_current_call(core->_core);
     if(currCall != nullptr)
     {
         const char *callee = linphone_address_as_string(linphone_core_get_current_call_remote_address(core->_core));
-        msg = "PRIVMSG " + user_nick + " :In call with " + string(callee) + "!\r\n";
+        msg = "PRIVMSG " + user_nick + " :In active call with " + string(callee) + "!\r\n";
         send_init_com(msg);
     }
     else
     {
-        msg = "PRIVMSG " + user_nick + " :Not in a call!\r\n";
+        msg = "PRIVMSG " + user_nick + " :Not in an active call!\r\n";
         send_init_com(msg);
     }
+
+    /* List of all calls (paused and active) */
+    if(callsVector.size() > 0)
+    {
+        string calls;
+        int size = 0;
+        for(int i = 0; i < callsVector.size(); i++)
+        {
+            calls += string(linphone_address_get_username(linphone_call_get_remote_address(callsVector.at(i)._call))) + ", ";
+            size++;
+        }
+        calls.erase(calls.size() - 2);
+        msg = "PRIVMSG " + user_nick + " :List of all calls (" + to_string(size) + ") - " + calls + "\r\n";
+        send_init_com(msg);
+    }
+    /* If STUN/TURN enabled */
     LinphoneNatPolicy *np = linphone_core_get_nat_policy(core->_core);
     if(linphone_nat_policy_stun_enabled(np))
     {
@@ -109,7 +149,6 @@ void irc_bot::print_status(irc_bot_core *core, irc_bot_proxy *proxy)
         msg = "PRIVMSG " + user_nick + " :STUN/TURN not enabled!\r\n";
         send_com(msg);
     }
-    /* TODO: list of all calls */
 }
 
 void irc_bot::print_help(vector<string> messages)
@@ -140,8 +179,6 @@ void irc_bot::print_help(vector<string> messages)
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    hangup: hangs up current call\r\n";
             send_init_com(msg);
-            //msg = "PRIVMSG " + user_nick + " :    cancel: cancels outgoing call.\r\n";
-            //send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    hold: holds current call.\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    resume: resumes current call.\r\n";
@@ -220,6 +257,7 @@ int irc_bot::decline()
     IncCall aux;
     for(int i = 0; i < incomingCallsVector.size(); i++)
     {
+        /* Decline all incoming calls that are still ringing */
         aux = incomingCallsVector.at(i);
         if(aux.status == 1)
         {
@@ -267,12 +305,14 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
     int bytes_recieved = 0;
     char buffer[4096];
     
+    /* If an instant message comes */
     if(!incomingChatMessage.empty())
     {
         string msg = "PRIVMSG " + user_nick + " :" + incomingChatMessage + "\r\n";
         send_com(msg);
         incomingChatMessage.clear();
     }
+    /* If someone calls */
     if(!incomingCallMessage.empty())
     {
         order += 1;
@@ -280,6 +320,7 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
         send_com(msg);
         incomingCallMessage.clear();
     }
+    /* If remote hangs up */
     if(!remoteHungUp.empty())
     {
         string msg = "PRIVMSG " + user_nick + " :" + remoteHungUp + "\r\n";
@@ -287,6 +328,7 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
         remoteHungUp.clear();
     }
 
+    /* Receive IRC messages */
     bytes_recieved = recv(sockfd, buffer, 4096, 0);
     if(bytes_recieved > 0)
     {
@@ -299,6 +341,7 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
 
         if(messages[0] == "PING")
         {
+            /* Respond to PING */
             string pong = "PONG " + messages[1] + "\r\n";
             send_init_com(pong);
         }
@@ -307,19 +350,21 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
             vector<string> aux;
             split(messages[0], "!", aux);
             string correct_nick = ":" + user_nick;
-
+            /* Ignore messages from other users */
             if((aux[0] != correct_nick) || (messages[2] != nick))
             {
                 return 0;
             }
 
             string command = messages[3];
-            if(command == ":call") /*call sip:aaaa@aah.cz*/
+            if(command == ":call")
             {
+                /* initiate a call */
                 this->call(messages, call, core, callChat, addrBook, proxy, 1);
             }
             else if(command == ":accept")
             {
+                /* Accept a call if there is one */
                 if(incomingCall != nullptr)
                 {       
                     this->accept(messages, call, core, callChat, addrBook, proxy);
@@ -332,6 +377,7 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
             }
             else if(command == ":decline")
             {
+                /* Decline a call */
                 this->decline_func();
             }
             else if(command == ":status")
@@ -344,31 +390,86 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
             }
             else if(command == ":-m")
             {
+                /* Send an instant message to the user you are in call with */
                 string msg = "PRIVMSG " + user_nick + " :Sending a message\r\n";
                 send_init_com(msg);
 
                 string message;
                 for(int i = 4; i < messages.size(); i++)
                 {
+                    /* Concatenate the text */
                     message = message + " " + messages[i];
                 }
                 callChat.send_message(message);
             }
+            /**
+             * TODO: TEST
+            */
+            else if(command == ":mess")
+            {
+                string msg;
+                string uri;
+                int start = 5;
+                /* Send to a remote in contacts */
+                if(messages[4] == "-a")
+                {
+                    if(messages.size() < 6)
+                    {
+                        msg = "PRIVMSG " + user_nick + " :Wrong usage! mess -a <name> <text>\r\n";
+                        send_com(msg);
+                        return 0;
+                    }
+                    if(!addrBook.addr_book_get_contact(messages[5]))
+                    {
+                        uri = addrBook.contactUri;
+                        start = 6;
+                    }   
+                    else
+                    {
+                        msg = "PRIVMSG " + user_nick + " :" + addrBook.dbMessage + "\r\n";
+                        send_com(msg);
+                        return 0;
+                    }
+                }
+                else
+                {
+                    if(messages.size() < 5)
+                    {
+                        msg = "PRIVMSG " + user_nick + " :Wrong usage! mess <uri> <text>\r\n";
+                        send_com(msg);
+                        return 0;
+                    }
+                    uri = messages[4];
+                    start = 5;
+                }
+                irc_bot_message chatRoom;
+                chatRoom.create_chat_room(core._core, uri);
+
+                string chatMessage;
+                /* Create and send the message */
+                for(int i = start; i < messages.size(); i++)
+                {
+                    chatMessage = chatMessage + " " + messages[i];
+                }
+                chatRoom.send_message(chatMessage);
+                msg = "PRIVMSG " + user_nick + " :Sending a message\r\n";
+                send_init_com(msg);
+            }
             else if(command == ":hangup")
             {
+                /* Hangup the current call */
                 call = callsVector.back(); 
                 if(call._call != nullptr)
                 {
                     string msg = "PRIVMSG " + user_nick + " :Hanging up!\r\n";
                     send_init_com(msg);
-                    callsVector.pop_back();
                     call.call_terminate();
                     return 1;
                 }
             }
-            /* TODO: check whether I can hold/resume */
             else if(command == ":hold")
             {
+                /* Put the current call on hold if possible */
                 if(linphone_call_get_state(call._call) == LinphoneCallStateConnected)
                 {
                     string msg = "PRIVMSG " + user_nick + " :Holding call " + outgoingCallee + "\r\n";
@@ -386,6 +487,7 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
             }
             else if(command == ":resume")
             {
+                /* Resume the current call if possible */
                 if(linphone_call_get_state(call._call) != LinphoneCallStateConnected)
                 {
                     string msg = "PRIVMSG " + user_nick + " :Resuming call " + outgoingCallee + "\r\n";
@@ -402,11 +504,13 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
 
             }
             else{
+                /* Address book commands */
                 if(!addrBook.addr_book_iterate(command, messages))
                 {
                     string msg = "PRIVMSG " + user_nick + " :" + addrBook.dbMessage + "\r\n";
                     send_com(msg);
                 }
+                /* Browse database */
                 else if(command == ":-con")
                 {
                     addrBook.addr_book_get_data(messages, Contact);
@@ -436,15 +540,17 @@ void irc_bot::call_loop(irc_bot_call &call, irc_bot_core &core, irc_bot_message 
     bool aux = true;
     bool isOnHold = false;
     string msg;
+    irc_bot_call auxCall = call;
+
     cout << endl;
     cout << "VSTUPUJU DO LOOPU" << endl;
     cout << endl;
-    call = callsVector.back(); 
     while (!(linphone_call_get_state(call._call) == LinphoneCallStateReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
     {
         core.iterate();
         if(linphone_call_get_state(call._call) == LinphoneCallStateConnected && aux)
         {
+            /* If call is successfully connected then let the user know and create chat room  */
             msg = "PRIVMSG " + user_nick + " :A call with " + outgoingCallee + " is established!\r\n";
             send_init_com(msg);
             callChat.create_call_chat_room(call._call);
@@ -471,9 +577,10 @@ void irc_bot::call_loop(irc_bot_call &call, irc_bot_core &core, irc_bot_message 
             send_init_com(msg);
             isOnHold = false;
         }
+        /* If the call encounters an error - especially when calling wrong uri */
         if(linphone_call_get_state(call._call) == LinphoneCallStateUpdating)
         {
-            msg = "PRIVMSG " + user_nick + " :Could not call " + outgoingCallee + "!\r\n";
+            msg = "PRIVMSG " + user_nick + " :Could not call " + outgoingCallee + "! Wrong uri!\r\n";
             send_com(msg);
             break;
         }
@@ -482,10 +589,28 @@ void irc_bot::call_loop(irc_bot_call &call, irc_bot_core &core, irc_bot_message 
         {
             break;
         }
+        /* Get the current call. Useful when having more than one call. */
+        /* If the call shall be still active, then it is present in calls vector */
+        /* If not, the loop is immediately terminated */
         if(!callsVector.empty())
         {
-            call = callsVector.back(); 
-            outgoingCallee = string(linphone_address_as_string(linphone_call_get_remote_address(call._call)));
+            bool found = false;
+            for(int i = 0; i < callsVector.size(); i++)
+            {
+                if(auxCall._call == callsVector.at(i)._call)
+                {
+                    call = callsVector.at(i);
+                    found = true;
+                }
+            }
+            if(!found)
+            {
+                break;
+            }
+        }
+        else
+        {
+            break;
         }
     }
     cout << endl;
@@ -505,6 +630,7 @@ void irc_bot::call(vector <string>messages, irc_bot_call &currentCall, irc_bot_c
         send_com(msg);
         return;
     }
+    /* Calling from contacts */
     if(messages[4] == "-a")
     {
         if(messages.size() < 6)
@@ -524,6 +650,7 @@ void irc_bot::call(vector <string>messages, irc_bot_call &currentCall, irc_bot_c
             return;
         }
     }
+    /* Calling with a phone number */
     else if(messages[4] == "-e")
     {
         if(messages.size() < 6)
@@ -531,6 +658,7 @@ void irc_bot::call(vector <string>messages, irc_bot_call &currentCall, irc_bot_c
             msg = "PRIVMSG " + user_nick + " :No number provided! call -a <uri>\r\n";
             send_com(msg);
         }
+        /* NAPTR lookup */
         uri = addrBook.get_enum_uri(messages);
         if(uri.empty())
         {
@@ -552,6 +680,7 @@ void irc_bot::call(vector <string>messages, irc_bot_call &currentCall, irc_bot_c
 
     msg = "PRIVMSG " + user_nick + " :Calling " + uri + "\r\n";
     send_com(msg);
+    /* Initiate the call */
     int err = call.call_invite(core._core, uri);
     if(err == 1)
     {
@@ -560,6 +689,7 @@ void irc_bot::call(vector <string>messages, irc_bot_call &currentCall, irc_bot_c
         return;
     }
     outgoingCallee = string(linphone_address_as_string(linphone_call_get_remote_address(call._call)));
+    /* Push the call into the active calls vector */
     callsVector.push_back(call);
     call_loop(call, core, callChat, addrBook, proxy);   
 }
@@ -579,6 +709,7 @@ void irc_bot::accept(vector <string>messages, irc_bot_call &call, irc_bot_core &
         send_com(msg);
         return;
     }
+    /* Get the index of the call in incoming calls vector */
     int index = stoi(messages[4]) - 1;
     IncCall incCall = incomingCallsVector[index];
     if(incCall.status == 0)
@@ -596,6 +727,7 @@ void irc_bot::accept(vector <string>messages, irc_bot_call &call, irc_bot_core &
         return;
     }
 
+    /* Accept the call */
     int ret = linphone_call_accept(incomingCall);
     const LinphoneAddress *from = linphone_call_get_remote_address(incomingCall);
     outgoingCallee =  string(linphone_address_as_string(from));
@@ -614,6 +746,7 @@ void irc_bot::accept(vector <string>messages, irc_bot_call &call, irc_bot_core &
     call._call = incomingCall;
     incomingCall = nullptr;
     IncCall aux;
+    /* Decline all other calls */
     for(int i = 0; i < incomingCallsVector.size(); i++)
     {
         aux = incomingCallsVector.at(i);
@@ -626,6 +759,7 @@ void irc_bot::accept(vector <string>messages, irc_bot_call &call, irc_bot_core &
     order = 0;
 
     linphone_call_ref(call._call);
+    /* Push the call into the active calls vector */
     callsVector.push_back(call);
     call_loop(call, core, callChat, addrBook, proxy);
 }
@@ -659,10 +793,13 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
     int n = 0;
     int x = 5;
     int pact = 1;
+    /* Compute the number of pages */
     double pmax = std::ceil(addrBook.dbData.size() / 5.0);
     int size = addrBook.dbData.size();
+    /* This is the first index of data on the last page */
     int lastPageIndex = addrBook.dbData.size() - (addrBook.dbData.size() % 5 );
 
+    /* The max number of data on each page is 5 so if it is less than 5 the x is callibrated */
     if(x > size)
         x = size;
     else
@@ -672,14 +809,16 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
     msg = "PRIVMSG " + user_nick + " :Now in database browsing mode!\r\n";
     send_init_com(msg);
     
-
+    /* Print the first page */
     i = print(n, x, i, pact, pmax,addrBook);
 
     bool running = true;
     char buffer[4096];
     while(running)
     {
+        /* If this function is called from a call then the core should still do the background work */
         core.iterate();
+        /* Receive commands */
         int bytes_recieved = recv(sockfd, buffer, 4096, 0);
         if(bytes_recieved > 0){
             messages.clear();
@@ -696,7 +835,6 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
             }
             if(messages[1] == "PRIVMSG")
             {
-                cout << ircMsg << endl; 
                 vector<string> aux;
                 split(messages[0], "!", aux);
                 string correct_nick = ":" + user_nick;
@@ -712,21 +850,34 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
                 }
                 else if(messages[3] == ":next")
                 {
-                    if(messages.size() > 5)
+                    /* If user provides a number of pages to skip. Else turn to next page (1) */
+                    if(messages.size() > 4)
                     {
-                        number = stoi(messages[5]);
+                        if(!strIsDigit(messages[4]))
+                        {
+                            msg = "PRIVMSG " + user_nick + " :Command expects a positive number!\r\n";
+                            send_init_com(msg);
+                            continue;
+                        }
+                        number = stoi(messages[4]);
                     }
                     else
                     {
                         number = 1;
                     }
+                    /* Increase actual page number */
                     pact += number;
+                    /* If it is overflowed then correct it */
                     if(pact > pmax)
                         pact = pmax;
+                    /* Compute the next starting index */
                     n += number * 5;
+                    /* If it overflowed then correct it */
                     if(n > size)
                         n = lastPageIndex;
+                    /* Compute the last data index */
                     x += number * 5;
+                    /* If it overflowed then correct it */
                     if(x > size)
                         x = size;
                     
@@ -734,14 +885,21 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
                 }
                 else if(messages[3] == ":prev")
                 {
-                    if(messages.size() > 5)
+                    if(messages.size() > 4)
                     {
-                        number = stoi(messages[5]);
+                        if(!strIsDigit(messages[4]))
+                        {
+                            msg = "PRIVMSG " + user_nick + " :Command expects a positive number!\r\n";
+                            send_init_com(msg);
+                            continue;
+                        }
+                        number = stoi(messages[4]);
                     }
                     else
                     {
                         number = 1;
                     }
+                    /* Same as in "next" but with - */
                     pact -= number;
                     if(pact < 0)
                         pact = 1;
@@ -749,8 +907,10 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
                     if(n < 0)
                         n = 0;
                     x -= number * 5;
+                    /* If x underflows then correct it */
                     if(x < 5)
                         x = 5;
+                        /* Here if user types "prev" on first page containing < 5 data then x is corrected */
                         if(x > size)
                             x = size;
                     
@@ -766,6 +926,7 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
     }
     msg = "PRIVMSG " + user_nick + " :Exiting database browsing mode!\r\n";
     send_com(msg);
+    /* Clear the data vector */
     addrBook.dbData.clear();
     return 0;
 }

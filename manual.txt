@@ -1,0 +1,141 @@
+The commands and examples used in IRCPhone.
+
+Launching in terminal:
+./irc_bot {ip/server} {channel} {user} {password}
+
+- ip/server : ip address or domain of the IRC server.
+- channel : channel on the server where the user will be present.
+- user : Nick of the user the bot shall listen to. Nick of the bot therefore will be "user_b".
+- password : Bots password. Might be redundant.
+
+After the Hello! message you are able to use these commands. The bot shall ALWAYS give the user feedback in a form of a short message.
+
+- register {-a <name>} | {<uri> <password>}
+    - Registers at a proxy with provided uri and password. You are also able to register with uri and password
+      stored at the database using -a and unique <name>.
+
+    - example: register sip:username@domain password or register -a joe
+
+- unregister
+    - Unregisters at the proxy.
+
+- call {-a <name>} | {-e <number>} | {<uri>}
+    - Initiates a call to <uri>. If you have the person stored in your contacts you might use -a <name>.
+    - Also you are able to make peer-to-peer calls with sip:username@ip-address
+    - The ENUM lookup is also available with argument -e. Just type the phone number.
+
+    -example: call sip:username@domain or call -a john or call -e +431123456789
+
+- accept {<number>}
+    - User is informed if an incoming call comes. User then might accept this call by typing accept <number> where
+      <number> is the order of the call in which the call comes. The order is diplayed to the user. All other active incoming
+      calls are declined.
+
+- decline
+    - Decline an incoming call/calls.
+
+- status
+    - Displays current status of the bot. If it's registered, if it's in an active call, the list of all calls (paused and active) and whether 
+      STUN or TRUN is enabled.
+
+- help {<option>}
+    - Displays list of all usable commands. Use <option> for a command category.
+    - Options   1. o - options
+                2. c - call commands
+                3. r - register commands
+                4. m - direct messages commands
+                5. a - address book commands
+                6. dl - database list commands (contacts/proxy ids browsing)
+
+    - example: help o
+
+- -s {<address>} [-t {<username>} {<passw>}]
+    - Enables ICE, STUN and sets the address of the STUN/TURN server (-s) and if desired enables TURN and authenticates at the
+      TURN server with provided <username> and <password> (-t). The -t argument is optional.
+
+    - example: -s stun.domain.com -t username password
+
+- end
+    - Terminates the bot.
+
+- mess {-a <name>} {<text>} | {<uri>} {<text>}
+    - Sends a direct message to the given <uri>. If the remote is in contacts the user may use -a <name>.
+
+    -examle: mess -a johnny Hey how are you? or mess sip:username@domain Hey how are you?
+
+When a call is initiated, you may also use these additional commands:
+
+- hold
+    - Puts the current call on hold.
+
+- resume 
+    - Resumes the current call.
+
+- hangup
+    - Hangs up the current call.
+
+- -m {text}
+    - Sends a direct message to the user you are in call with.
+
+On the other hand, these are not available during call:
+- register, unregister, -s -t, end
+
+NOTE: Bot can also be terminated by CTRL+C in terminal.
+
+Address book commands are ubiquitous and their role is to manage your contacts or proxy identities.
+The database is open since the bot's launch on server.
+NOTE: All <name> attributes ARE unique within the database!
+
+- -dropdb
+    - Drops the tables.
+
+- -c 
+    - Creates the tables.
+
+- -ic {<name>} {<uri>}
+    - Inserts new contact.
+
+    - example: -ic JohnDoe sip:john@domain
+
+- -ir {<name>} {<uri>} {<password>}
+    - Inserts new proxy identity used for registering.
+
+    - example: -ir MyProxy sip:myname@domain mypassword
+
+- -uc {<name>} {<uri>}
+    - Updates contact. Must already exist.
+
+    - example: -uc JohnDoe sip:NewUri@domain
+
+- -ur {<name>} {<uri>} {<password>}
+    - Updates identity. Must already exist. If you wish to not update an attribute, type "-" instead.
+
+    - example: -ur MyNewId sip:NewUri@domain newPassw
+    - If you want to update just password: -ur MyNewId - newPassw
+
+- -rc {<name>} or -rr {<name>}
+    - Removes a record from contacts (-rc) or from proxy identity (-rr) respectively.
+
+Also the user is able to browse its contacts/identities:
+
+- -con [<pattern>]
+    - Browse contacts. The pattern is standard sqlite regex with % and _ wildcards. 
+
+    - example: -con joh% will search for records starting with joh and ending with any number of random characters.
+
+- -reg [<pattern>]
+    - Browse proxy identities. Same rules for patter as in -con command.
+
+- next [<number>]
+    - While in browsing mode you can turn to next page by typing this command. You can skip a certain
+      number of pages by providing a <number>. By default its 1.
+
+- prev [<number>]
+    - Turns to previous page. <number> argument has the same rules as in "next" command.
+
+- exit
+    - Exits the browsing mode.
+
+NOTE: No other commands than next, prev and exit are available. You must leave the browsing mode first.
+      If in an active call the user is still able to keep calling.
+
