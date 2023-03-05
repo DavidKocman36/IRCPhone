@@ -165,15 +165,15 @@ void irc_bot::print_help(vector<string> messages)
             msg = "PRIVMSG " + user_nick + " :    -s <server> [-t <user> <passw>]: sets STUN/TURN server (-s) with its credentials (-t).\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    end: ends the bot. Also possible by CTRL+C in terminal.\r\n";
-            send_init_com(msg);
+            send_com(msg);
         }
         else if(messages[4] == "c")
         {
             msg = "PRIVMSG " + user_nick + " :Call commands:\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    call [-a <name>] <uri>: initiates a call to the given uri, with \"-a\" you can dial from contacts\r\n";
+            msg = "PRIVMSG " + user_nick + " :    call [-a <name>] | [-e <number>] | {<uri>}: initiates a call to the given uri, with \"-a\" you can dial from contacts, with \"-e\" you can call with ENUM lookup.\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    accept <number>: accepts incoming call with the given order\r\n";
+            msg = "PRIVMSG " + user_nick + " :    accept {<number>}: accepts incoming call with the given order\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    decline: declines all incoming calls\r\n";
             send_init_com(msg);
@@ -182,25 +182,25 @@ void irc_bot::print_help(vector<string> messages)
             msg = "PRIVMSG " + user_nick + " :    hold: holds current call.\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    resume: resumes current call.\r\n";
-            send_init_com(msg);
+            send_com(msg);
         }
         else if(messages[4] == "r")
         {
             msg = "PRIVMSG " + user_nick + " :Register commands:\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    register [-a <name>] <uri> <password>: registers your sip account, with \"-a\" you can register from database.\r\n";
+            msg = "PRIVMSG " + user_nick + " :    register [-a <name>] | {<uri>} {<password>}: registers your sip account, with \"-a\" you can register from database.\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    unregister: unregisters your sip account\r\n";
-            send_init_com(msg);
+            send_com(msg);
         }
         else if(messages[4] == "m")
         {
             msg = "PRIVMSG " + user_nick + " :Direct messages commands:\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    mess [-a <name>] <uri> <text>: sends a direct message to the given uri, with \"-a\" you can send to a uri from contacts.\r\n";
+            msg = "PRIVMSG " + user_nick + " :    mess {-a <name>} {<text>} | {<uri>} {<text>}: sends a direct message to the given uri, with \"-a\" you can send to a uri from contacts.\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    -m <text>: sends a direct message to the remote you're in a call with (only during call)\r\n";
-            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -m {<text>}: sends a direct message to the remote you're in a call with (only during call)\r\n";
+            send_com(msg);
         }
         else if(messages[4] == "a")
         {
@@ -208,18 +208,18 @@ void irc_bot::print_help(vector<string> messages)
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    -dropdb, -c: drops the database (-dropdb), creates the database (-c)\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    -ic <name> <uri>: inserts a new contact\r\n";
+            msg = "PRIVMSG " + user_nick + " :    -ic {<name>} {<uri>}: inserts a new contact\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    -ir <name> <uri> <password>: inserts a new proxy identity\r\n";
+            msg = "PRIVMSG " + user_nick + " :    -ir {<name>} {<uri>} {<password>}: inserts a new proxy identity\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    -uc <name> <uri>: updated a contact\r\n";
+            msg = "PRIVMSG " + user_nick + " :    -uc {<name>} {<uri>}: updated a contact\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    -ur <name> <uri> <password>: updates a proxy identity. Type \"-\" for an attribute you dont want to change.\r\n";
+            msg = "PRIVMSG " + user_nick + " :    -ur {<name>} {<uri>} {<password>}: updates a proxy identity. Type \"-\" for an attribute you dont want to change.\r\n";
             send_init_com(msg);
-            msg = "PRIVMSG " + user_nick + " :    -rc <name>, -rr <name>: remove a contact or proxy identity\r\n";
+            msg = "PRIVMSG " + user_nick + " :    -rc {<name>}, -rr {<name>}: remove a contact or proxy identity\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :NOTE: All <name> attributes must be unique!\r\n";
-            send_init_com(msg);
+            send_com(msg);
         }
         else if(messages[4] == "dl")
         {
@@ -238,15 +238,15 @@ void irc_bot::print_help(vector<string> messages)
             msg = "PRIVMSG " + user_nick + " :    -exit: updates a proxy identity. Type \"-\" for an attribute you dont want to change.\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :NOTE: <pattern> matches only the name attribute! e.g. -con test% prints only contacts starting with \"test\"\r\n";
-            send_init_com(msg);
+            send_com(msg);
         }
     }
     else
     {
-        msg = "PRIVMSG " + user_nick + " :Usage: help <option>\r\n";
+        msg = "PRIVMSG " + user_nick + " :Usage: help {<option>}\r\n";
         send_init_com(msg);
         msg = "PRIVMSG " + user_nick + " :Options: o (options), c (call commands), r (register commands), m (instant message commands), a (address book commands), dl (database list commands)\r\n";
-        send_init_com(msg);
+        send_com(msg);
     }
 }
 
@@ -333,17 +333,22 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
     if(bytes_recieved > 0)
     {
         msg = string(buffer, 0, bytes_recieved);
+        memset(buffer, 0, sizeof(buffer));
         cout << msg;
 
         // trim of the "\r\n" for better command handling
         msg.resize(msg.length() - 2);
         split(msg, " ", messages);
 
-        if(messages[0] == "PING")
+        std::vector<std::string>::iterator in;
+        if((in = std::find(messages.begin(), messages.end(), "PING")) != messages.end())
         {
-            /* Respond to PING */
-            string pong = "PONG " + messages[1] + "\r\n";
+            int index = in - messages.begin() + 1;
+            string pong = "PONG " + messages[index] + "\r\n";
+            cout << pong << endl;
             send_init_com(pong);
+            messages.clear();
+            memset(buffer, 0, sizeof(buffer));
         }
         if(messages[1] == "PRIVMSG")
         {
@@ -402,9 +407,6 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
                 }
                 callChat.send_message(message);
             }
-            /**
-             * TODO: TEST
-            */
             else if(command == ":mess")
             {
                 string msg;
@@ -600,6 +602,7 @@ void irc_bot::call_loop(irc_bot_call &call, irc_bot_core &core, irc_bot_message 
                 if(auxCall._call == callsVector.at(i)._call)
                 {
                     call = callsVector.at(i);
+                    outgoingCallee = linphone_address_as_string(linphone_call_get_remote_address(call._call));
                     found = true;
                 }
             }
@@ -655,7 +658,7 @@ void irc_bot::call(vector <string>messages, irc_bot_call &currentCall, irc_bot_c
     {
         if(messages.size() < 6)
         {
-            msg = "PRIVMSG " + user_nick + " :No number provided! call -a <uri>\r\n";
+            msg = "PRIVMSG " + user_nick + " :No number provided! call -e <number>\r\n";
             send_com(msg);
         }
         /* NAPTR lookup */
@@ -691,7 +694,7 @@ void irc_bot::call(vector <string>messages, irc_bot_call &currentCall, irc_bot_c
     outgoingCallee = string(linphone_address_as_string(linphone_call_get_remote_address(call._call)));
     /* Push the call into the active calls vector */
     callsVector.push_back(call);
-    call_loop(call, core, callChat, addrBook, proxy);   
+    call_loop(call, core, callChat, addrBook, proxy);
 }
 
 void irc_bot::accept(vector <string>messages, irc_bot_call &call, irc_bot_core &core, irc_bot_message &callChat, addr_book &addrBook,  irc_bot_proxy &proxy)
@@ -828,10 +831,14 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
             ircMsg.resize(ircMsg.length() - 2);
             split(ircMsg, " ", messages);
 
-            if(messages[0] == "PING")
+            std::vector<std::string>::iterator in;
+            if((in = std::find(messages.begin(), messages.end(), "PING")) != messages.end())
             {
-                string pong = "PONG " + messages[1] + "\r\n";
+                int index = in - messages.begin() + 1;
+                string pong = "PONG " + messages[index] + "\r\n";
                 send_init_com(pong);
+                messages.clear();
+                memset(buffer, 0, sizeof(buffer));
             }
             if(messages[1] == "PRIVMSG")
             {
@@ -906,14 +913,11 @@ int irc_bot::addr_book_print(vector<string> messages, addr_book &addrBook, irc_b
                     n -= number * 5;
                     if(n < 0)
                         n = 0;
-                    x -= number * 5;
-                    /* If x underflows then correct it */
-                    if(x < 5)
-                        x = 5;
+                    x = n + 5;
                         /* Here if user types "prev" on first page containing < 5 data then x is corrected */
-                        if(x > size)
-                            x = size;
-                    
+                    if(x > size)
+                        x = size;
+                    cout << n << " " << x << endl;
                     i = print(n, x, i, pact, pmax, addrBook);
                 }
                 else

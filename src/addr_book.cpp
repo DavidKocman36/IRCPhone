@@ -354,7 +354,7 @@ int addr_book::addr_book_get_registrar(string &name)
 
     if(!this->addr_book_check(name, Registrar))
     {
-        this->dbMessage = "Contact doesnt exist!";
+        this->dbMessage = "Identity doesnt exist!";
         return 1;
     }
 
@@ -541,56 +541,81 @@ string addr_book::get_enum_uri(vector<string> messages)
 
     }
     revNum += "e164.arpa.";
+    string uri;
+
+    int size = 1000;
+    union {
+        HEADER hdr;              
+        u_char buf[1000]; 
+    } response;  
+    
+    /* Execute a DNS NAPTR search */
+    res_init();
+    ns_msg handle;
+    const char *qry = revNum.c_str();
+    int responseLen =res_search(qry, ns_c_in, ns_t_naptr,(u_char *)&response,sizeof(response));
+    if (responseLen < 0)
+        return "";
+
+    if (ns_initparse(response.buf, responseLen, &handle)<0)
+    {
+        perror("Error: ");
+        return "";
+    }
+    
+    //https://www.rfc-editor.org/rfc/rfc2915#page-3
+    //https://docstore.mik.ua/orelly/networking_2ndEd/dns/ch15_02.htm
+
+    ns_rr rr;
+    int rrnum;
+    ns_sect section=ns_s_an;
+    char res[1000];
+    string aux;
+    bool found = false;
+
+    /* Get the answer */
+    for (rrnum=0;rrnum<(ns_msg_count(handle,section));rrnum++)
+    {
+        if (ns_parserr(&handle,ns_s_an,rrnum,&rr)<0)
+        {
+            fprintf(stderr, "ERROR PARSING RRs");
+            return "";
+        }   
+        if (ns_rr_type(rr)==ns_t_naptr)
+        {
+            memcpy(&res, ns_rr_rdata(rr) + 11, sizeof(res));
+            aux = string(res);
+            if (aux.find("sip") != string::npos) {
+                /* We have found the SIP NAPTR RR */
+                found = true;
+                break;
+            }
+        }
+    }
+
+    if(!found)
+        return "";
+    
+    /* Get regex parts of the NAPTR RR */
+    vector<string> regexes;
+    split(aux, "!", regexes); 
+    /* Erase a redundant part of the response */
+    regexes.erase(regexes.begin());
 
     FILE *fp;
-    FILE *fd;
     char path[1024];
-
-    /* Retrieve a NAPTR record with the sip uri. */
-    string comm_str = "dig -t naptr " + revNum + " | grep -o \"E2U+sip.*\"";
-    const char* comm_dig = comm_str.c_str();
-
-    fp = popen(comm_dig, "r");
+    /* Execute a regex substitution */
+    string comm_str = "echo \"" + number + "\" | sed -E 's/" + regexes[0] + "/" + regexes[1] + "/g'";
+    const char* comm_sed = comm_str.c_str();
+    fp = popen(comm_sed, "r");
     if (fp == NULL)
         return "";
 
-    string res;
     while (fgets(path, 1024, fp) != NULL)
-        res += string(path);
-
-    /* If NAPTR record doesnt exist for the corresponding number then return empty string */
-    if(res.empty())
-    {
-        pclose(fp);
-        return "";
-    }
-
-    /* Split the regex and the substitution of the uri */
-    /* https://superuser.com/questions/1278979/understanding-wildcards-in-enum-responses */
-    vector<string> parts;
-    split(res, "!", parts);
-    /* Erase a redundant part of the response */
-    parts.erase(parts.begin());
-
-    /* Replace all \\ with just \ */
-    findAndReplaceAll(parts[0], "\\\\", "\\");
-    findAndReplaceAll(parts[1], "\\\\", "\\");
-
-    /* Create the corresponding sip uri */
-    comm_str = "echo \"" + number + "\" | sed -E 's/" + parts[0] + "/" + parts[1] + "/g'";
-    const char* comm_sed = comm_str.c_str();
-    fd = popen(comm_sed, "r");
-    if (fd == NULL)
-        return "";
-
-    string uri;
-    while (fgets(path, 1024, fd) != NULL)
         uri += string(path);
 
     uri.erase(uri.length()-1);
-
     pclose(fp);
-    pclose(fd);
 
     return uri;
 }

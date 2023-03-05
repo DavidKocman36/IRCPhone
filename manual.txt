@@ -1,4 +1,5 @@
 The commands and examples used in IRCPhone.
+IMPORTANT: Do not accidentally flood you BOT. It might stop receiving messages!!
 
 Launching in terminal:
 ./irc_bot {ip/server} {channel} {user} {password}

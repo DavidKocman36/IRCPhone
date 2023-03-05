@@ -51,12 +51,6 @@ int main(int argc, char *argv[]){
     //linphone_core_set_log_file(NULL);
 	//linphone_core_set_log_level(ORTP_MESSAGE);
 
-    /* Set some linphone options */
-    linphone_core_enable_adaptive_rate_control(core._core, true);
-    linphone_core_enable_mic(core._core, true);
-    linphone_core_set_audio_port_range(core._core, 7077, 8000);
-    linphone_core_set_play_file(core._core, "./sounds/toy-mono.wav");
-    linphone_core_set_ring(core._core, "./sounds/ringback.wav");
     const char *primCont = linphone_core_get_primary_contact(core._core);
 
     /* Open the database handle */
@@ -98,7 +92,7 @@ int main(int argc, char *argv[]){
     /* Set receive timeout */
     struct timeval timeout;      
     timeout.tv_sec = 0;
-    timeout.tv_usec = 10000;
+    timeout.tv_usec = 5000;
     
     if (setsockopt (bot.sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout) < 0)
     {
@@ -107,7 +101,7 @@ int main(int argc, char *argv[]){
     /* Connect to the server */ 
     struct sockaddr_in irc_server;
     irc_server.sin_family = AF_INET;
-    irc_server.sin_port = htons(6667);
+    irc_server.sin_port = htons(6666);
     memcpy(&irc_server.sin_addr, he->h_addr_list[0], he->h_length);
 
     int conn = connect(bot.sockfd, (sockaddr*)&irc_server, sizeof(irc_server));
@@ -123,7 +117,7 @@ int main(int argc, char *argv[]){
     /* Send all the initial commands */
     string channel_com = "JOIN " + bot.channel + "\r\n";
     string password_com = "PASS " + bot.password + "\r\n";
-    string user_com = "USER " + bot.nick + " 0 * :" + bot.user_nick + "\r\n";
+    string user_com = "USER " + bot.nick + " 0 * :" + bot.user_nick + "'s bot\r\n";
     string nick_com = "NICK " + bot.nick + "\r\n";
     vector<string> messages;
     string ircMsg;
@@ -132,6 +126,7 @@ int main(int argc, char *argv[]){
     bot.send_init_com(password_com);
     bot.send_init_com(nick_com);
     bot.send_init_com(user_com);
+    
     string hello_com = "PRIVMSG " + bot.user_nick + " :Hello!\r\n";
     bot.send_init_com(hello_com);
     string id_com = "PRIVMSG " + bot.user_nick + " :You are now as " + primCont + "!\r\n";
@@ -169,8 +164,8 @@ int main(int argc, char *argv[]){
         {
             messages.clear();
             ircMsg = string(buffer, 0, bytes_recieved);
-            memset(buffer, 0, sizeof buffer);
-            //cout << ircMsg;
+            memset(buffer, 0, sizeof(buffer));
+            cout << ircMsg;
 
             // trim of the "\r\n" for better command handling
             ircMsg.resize(ircMsg.length() - 2);
@@ -192,10 +187,15 @@ int main(int argc, char *argv[]){
             }
 
             /* Respond to PING */
-            if(messages[0] == "PING")
+            std::vector<std::string>::iterator in;
+            if((in = std::find(messages.begin(), messages.end(), "PING")) != messages.end())
             {
-                string pong = "PONG " + messages[1] + "\r\n";
+                int index = in - messages.begin() + 1;
+                string pong = "PONG " + messages[index] + "\r\n";
+                cout << pong << endl;
                 bot.send_init_com(pong);
+                messages.clear();
+                memset(buffer, 0, sizeof(buffer));
             }
             if(messages[1] == "PRIVMSG")
             {
@@ -296,7 +296,6 @@ int main(int argc, char *argv[]){
                 }
                 else if(command == ":call")
                 {
-                    /* Make a call */
                     bot.call(messages, currentCall, core, callChat, addrBook, proxy, 0);
                     callsVector.clear();
                 }

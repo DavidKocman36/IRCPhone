@@ -159,8 +159,8 @@ void irc_bot_core::enable_turn(string &user, string &passw)
 */
 int irc_bot_core::core_create()
 {
-    this->_core = linphone_factory_create_core_3(this->_factory, "./conf/linphonerc", nullptr, nullptr);
-    //this->_core = linphone_factory_create_core_3(this->_factory, nullptr, nullptr, nullptr);
+    //this->_core = linphone_factory_create_core_3(this->_factory, "./conf/linphonerc", nullptr, nullptr);
+    this->_core = linphone_factory_create_core_3(this->_factory, nullptr, nullptr, nullptr);
     if(this->_core == nullptr)
     {
         cout << "An error creating core occured!" << endl;
@@ -168,7 +168,7 @@ int irc_bot_core::core_create()
     }
     int err;
     if((err = linphone_core_start(this->_core)) != 0){
-        cout << "An error starting core occured!" << endl;
+        cout << "An error starting core occured! Error number: " << err << endl;
         return 1;
     }
     this->_cbs = linphone_factory_create_core_cbs(this->_factory);
@@ -186,6 +186,15 @@ int irc_bot_core::core_create()
     linphone_core_add_callbacks(this->_core, this->_cbs);
     linphone_core_enable_echo_cancellation(this->_core, false);
     this->create_nat_policy();
+
+    /* Set some linphone options */
+    linphone_core_enable_adaptive_rate_control(this->_core, true);
+    linphone_core_enable_mic(this->_core, true);
+    linphone_core_set_audio_port_range(this->_core, 7077, 8000);
+    linphone_core_set_play_file(this->_core, "./sounds/toy-mono.wav");
+    linphone_core_set_ring(this->_core, "./sounds/ringback.wav");
+    linphone_core_enable_video_capture(this->_core, false);
+    linphone_core_enable_video_display(this->_core, false);
 
     return 0;
 }

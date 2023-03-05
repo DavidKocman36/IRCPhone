@@ -23,6 +23,13 @@
 #include <sqlite3.h>
 #include <vector>
 #include <string>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <regex>
 #include "my_string.h"
 
 using namespace std;

@@ -16,7 +16,7 @@
 #
 
 CC = g++
-CFLAGS  = -std=c++2a -g -w -I$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/include -L$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/lib -llinphone -lbctoolbox
+CFLAGS  = -std=c++2a -g -w -I$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/include -L$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/lib -llinphone -lbctoolbox -lresolv
 
 TARGET = src/irc_bot_main
 TARGET_OUT = irc_bot

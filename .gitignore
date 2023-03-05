@@ -5,3 +5,4 @@ conf/linphonerc
 conf/linphonerc_copy.txt
 db/addr_book.db
 notes.txt
+test/
