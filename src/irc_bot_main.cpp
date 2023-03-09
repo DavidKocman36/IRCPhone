@@ -33,14 +33,12 @@ static void stop(int signum){
 }
 
 int main(int argc, char *argv[]){
-
     // ./irc_bot {ip/server} {channel} {user} {password}
     if(argc != 5){
         cout << "Not enough arguments!" << endl;
         cout << "USAGE: ./irc_bot {server} {channel} {user_nick} {password}" << endl;
         return 1;
     }
-
     signal(SIGINT, stop);
 
     int coreErr = core.core_create();
@@ -57,6 +55,7 @@ int main(int argc, char *argv[]){
     int er = addrBook.addr_book_open();
     if(er) {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(addrBook.db));
+        return 1;
     } 
     else{
         fprintf(stderr, "Opened database successfully\n");
@@ -113,7 +112,8 @@ int main(int argc, char *argv[]){
         cout << "Connected: " << bot.server << endl;
     }
 
-    char buffer[4096];
+    char buffer[1024];
+    memset(buffer, 0, sizeof(buffer));
     /* Send all the initial commands */
     string channel_com = "JOIN " + bot.channel + "\r\n";
     string password_com = "PASS " + bot.password + "\r\n";
@@ -159,13 +159,13 @@ int main(int argc, char *argv[]){
         }  
 
         /* Receive commands */
-        bytes_recieved = recv(bot.sockfd, buffer, 4096, 0);
+        bytes_recieved = recv(bot.sockfd, buffer, 1024, 0);
         if(bytes_recieved > 0)
         {
             messages.clear();
             ircMsg = string(buffer, 0, bytes_recieved);
             memset(buffer, 0, sizeof(buffer));
-            cout << ircMsg;
+            //cout << ircMsg;
 
             // trim of the "\r\n" for better command handling
             ircMsg.resize(ircMsg.length() - 2);
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]){
             {
                 int index = in - messages.begin() + 1;
                 string pong = "PONG " + messages[index] + "\r\n";
-                cout << pong << endl;
+                //cout << pong << endl;
                 bot.send_init_com(pong);
                 messages.clear();
                 memset(buffer, 0, sizeof(buffer));
@@ -282,10 +282,18 @@ int main(int argc, char *argv[]){
                         uri = messages[4];
                         start = 5;
                     }
+                    if(start >= messages.size())
+                    {
+                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! Text is missing!\r\n";
+                        bot.send_com(msg);
+                        continue;
+                    }
+
                     chatRoom.create_chat_room(core._core, uri);
 
                     string chatMessage;
                     /* Create and send the message */
+                    
                     for(int i = start; i < messages.size(); i++)
                     {
                         chatMessage = chatMessage + " " + messages[i];
@@ -385,8 +393,6 @@ int main(int argc, char *argv[]){
                         bot.send_com(msg);
                         continue;
                     }
-                    msg = "PRIVMSG " + bot.user_nick + " :Unregistering " + bot.sipUsername +"\r\n";
-                    bot.send_init_com(msg);
                     
                     proxy.bot_unregister(core._core);
                     bot.sipUsername.clear();

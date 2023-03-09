@@ -31,6 +31,3 @@ run:
 
 $(TARGET): $(TARGET).cpp
 	$(CC) $(TARGET).cpp -lsqlite3 $(OBJECT_FILES) $(CFLAGS) -o $(TARGET_OUT)
-
-clean:
-	$(RM) $(TARGET)

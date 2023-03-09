@@ -59,33 +59,26 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
             incomingCallsVector.push_back(incCall);
             break;
         case LinphoneCallStateOutgoingInit:
-            printf("Started the call!\n");
             break;
 		case LinphoneCallStateOutgoingRinging:
-			printf("It is now ringing remotely !\n");
 		    break;
 		case LinphoneCallStateOutgoingEarlyMedia:
-			printf("Receiving some early media\n");
 		    break;
 		case LinphoneCallStateConnected:
-			printf("We are connected !\n");
 		    break;
 		case LinphoneCallStateStreamsRunning:
-			printf("Media streams established !\n");
 		    break;
         case LinphoneCallStatePausing:
             break;
         case LinphoneCallStatePaused:
             break;
 		case LinphoneCallStateEnd:
-			printf("Call is terminated.\n");
 		    break;
         case LinphoneCallStateReferred:
             callsVector.pop_back();
             break;
 		case LinphoneCallStateError:
             /* When the call ended */
-			printf("Call failure !\n");
             /* When the incoming call rings no more change its status to 0 (inactive) */
             for(int i = 0; i < incomingCallsVector.size(); i++)
             {
@@ -111,7 +104,7 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
         case LinphoneCallStateReleased:
 		    break;
 		default:
-			printf("Unhandled notification %i\n",cstate);
+            break;
 	}
 }
 
@@ -154,12 +147,8 @@ void irc_bot_core::enable_turn(string &user, string &passw)
     linphone_core_set_nat_policy(this->_core, this->_nat); 
 }
 
-/**
- * TODO: possibility of not using a config
-*/
 int irc_bot_core::core_create()
 {
-    //this->_core = linphone_factory_create_core_3(this->_factory, "./conf/linphonerc", nullptr, nullptr);
     this->_core = linphone_factory_create_core_3(this->_factory, nullptr, nullptr, nullptr);
     if(this->_core == nullptr)
     {

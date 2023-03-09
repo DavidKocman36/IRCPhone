@@ -1,13 +1,14 @@
 The commands and examples used in IRCPhone.
-IMPORTANT: Do not accidentally flood you BOT. It might stop receiving messages!!
+IMPORTANT: Do not accidentally flood your BOT. It might stop receiving messages!!
+TIP: Use mostly servers where registration is not required. For example irc.libera.chat
 
 Launching in terminal:
 ./irc_bot {ip/server} {channel} {user} {password}
 
 - ip/server : ip address or domain of the IRC server.
-- channel : channel on the server where the user will be present.
+- channel : channel on the server where the user will be present. The format is "#channel" or just channel.
 - user : Nick of the user the bot shall listen to. Nick of the bot therefore will be "user_b".
-- password : Bots password. Might be redundant.
+- password : Bots password. Sometimes not needed but still mandatory.
 
 After the Hello! message you are able to use these commands. The bot shall ALWAYS give the user feedback in a form of a short message.
 

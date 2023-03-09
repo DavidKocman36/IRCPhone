@@ -190,7 +190,7 @@ int addr_book::addr_book_insert(string &name, string &uri, string &passw, Option
     {
         if(this->addr_book_check(name, Registrar))
         {
-            this->dbMessage = "Contact already exists!";
+            this->dbMessage = "Identity already exists!";
             return 1;
         }
         sql_str = "INSERT INTO REGISTRAR (NAME,URI,PASSW) "  \
