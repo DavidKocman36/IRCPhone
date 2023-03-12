@@ -24,7 +24,7 @@
 # NOTE: Connect only to servers which don't require registering an account
 # Best one is irc.libera.chat 
 #
-# Arch: 
+# Launch: 
 # python3 test.py {server} {channel} [-r sip_identity sip_passw]
 #
 # Test cases:

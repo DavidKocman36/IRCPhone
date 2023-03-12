@@ -46,8 +46,6 @@ int main(int argc, char *argv[]){
     {
         return 1;
     }
-    //linphone_core_set_log_file(NULL);
-	//linphone_core_set_log_level(ORTP_MESSAGE);
 
     const char *primCont = linphone_core_get_primary_contact(core._core);
 
@@ -165,7 +163,6 @@ int main(int argc, char *argv[]){
             messages.clear();
             ircMsg = string(buffer, 0, bytes_recieved);
             memset(buffer, 0, sizeof(buffer));
-            //cout << ircMsg;
 
             // trim of the "\r\n" for better command handling
             ircMsg.resize(ircMsg.length() - 2);
@@ -192,7 +189,6 @@ int main(int argc, char *argv[]){
             {
                 int index = in - messages.begin() + 1;
                 string pong = "PONG " + messages[index] + "\r\n";
-                //cout << pong << endl;
                 bot.send_init_com(pong);
                 messages.clear();
                 memset(buffer, 0, sizeof(buffer));

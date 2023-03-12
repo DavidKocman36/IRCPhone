@@ -51,13 +51,11 @@ void irc_bot::bot_terminate(irc_bot_core *core, irc_bot_proxy *proxy)
         
         if(linphone_proxy_config_get_state(proxy->proxy_cfg) == LinphoneRegistrationCleared)
         {
-            cout << "Succesfully unregistered!" << endl;
             msg = "PRIVMSG " + user_nick + " :Succesfully unregistered!\r\n";
             send_init_com(msg);
         }
         else
         {
-            cout << "Unegistration failed!" << endl;
             msg = "PRIVMSG " + user_nick + " :Unegistration failed!\r\n";
             send_init_com(msg);
         }
@@ -347,7 +345,6 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
     {
         msg = string(buffer, 0, bytes_recieved);
         memset(buffer, 0, sizeof(buffer));
-        //cout << msg;
 
         // trim of the "\r\n" for better command handling
         msg.resize(msg.length() - 2);
@@ -358,7 +355,6 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
         {
             int index = in - messages.begin() + 1;
             string pong = "PONG " + messages[index] + "\r\n";
-            //cout << pong << endl;
             send_init_com(pong);
             messages.clear();
             memset(buffer, 0, sizeof(buffer));
