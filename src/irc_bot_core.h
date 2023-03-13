@@ -13,6 +13,9 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Author: David Kocman
+ * 
  */
 
 #ifndef IRC_BOT_CORE_H
@@ -101,6 +104,11 @@ public:
      * @param passw The TURN password
     */
     void enable_turn(string &user, string &passw);
+
+    /**
+     * Function that disables STUN/TURN and ICE
+    */
+    void disable_nat();
 };
 
 #endif

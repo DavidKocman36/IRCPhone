@@ -13,6 +13,9 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Author: David Kocman
+ * 
  */
 
 #include "irc_bot_core.h"
@@ -182,6 +185,7 @@ int irc_bot_core::core_create()
     linphone_core_set_audio_port_range(this->_core, 7077, 8000);
     linphone_core_set_play_file(this->_core, "./sounds/toy-mono.wav");
     linphone_core_set_ring(this->_core, "./sounds/ringback.wav");
+    linphone_core_set_ringback(this->_core, "./sounds/ringback.wav");
     linphone_core_enable_video_capture(this->_core, false);
     linphone_core_enable_video_display(this->_core, false);
 
@@ -202,4 +206,15 @@ void irc_bot_core::core_destroy()
 void irc_bot_core::iterate()
 {
     linphone_core_iterate(this->_core);
+}
+
+void irc_bot_core::disable_nat()
+{   
+    /* Clear STUN/TURN and all protocols */
+    linphone_nat_policy_clear(this->_nat);
+    /* Set these options again, just in case */
+    linphone_core_enable_ipv6(this->_core, false);
+    linphone_core_enable_keep_alive(this->_core, true);
+
+    linphone_core_set_nat_policy(this->_core, this->_nat);
 }

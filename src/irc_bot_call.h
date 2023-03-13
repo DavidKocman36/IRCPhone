@@ -12,7 +12,10 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>. 
+ * 
+ * Author: David Kocman
+ * 
  */
 
 #ifndef IRC_BOT_CALL_H

@@ -13,6 +13,9 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Author: David Kocman
+ * 
  */
 
 #include "irc_bot.h"
@@ -218,7 +221,7 @@ int main(int argc, char *argv[]){
                     string msg;
                     if(messages.size() < 5)
                     {
-                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! -s <server> [-t <user> <password>]\r\n";
+                        msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! -s {<server>} [-t <user> <password>]\r\n";
                         bot.send_com(msg);
                         continue;
                     }
@@ -230,15 +233,28 @@ int main(int argc, char *argv[]){
                         {
                             if(messages.size() < 6)
                             {
-                                msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! -s <server> [-t <user> <password>]\r\n";
+                                msg = "PRIVMSG " + bot.user_nick + " :Wrong usage! -s {<server>} [-t <user> <password>]\r\n";
                                 bot.send_com(msg);
                                 continue;
                             }
                             string user = messages[6];
                             string passw = messages[7];
                             core.enable_turn(user, passw);   
+                            msg = "PRIVMSG " + bot.user_nick + " :STUN and TURN enabled!\r\n";
+                            bot.send_com(msg);
+                            continue;
                         }
                     }
+                    msg = "PRIVMSG " + bot.user_nick + " :STUN enabled!\r\n";
+                    bot.send_com(msg);
+                }
+                /* Disable stun/turn */
+                else if(command == ":-sd")
+                {
+                    string msg;
+                    core.disable_nat();
+                    msg = "PRIVMSG " + bot.user_nick + " :STUN/TURN disabled!\r\n";
+                    bot.send_com(msg);
                 }
                 /* Send a message */
                 else if(command == ":mess")
@@ -402,7 +418,8 @@ int main(int argc, char *argv[]){
                         msg = "PRIVMSG " + bot.user_nick + " :Succesfully unregistered!\r\n";
                         bot.send_init_com(msg);
                         bot.sipUsername.clear();
-                        id_com = "PRIVMSG " + bot.user_nick + " :You are now as " + primCont + "!\r\n";
+                        const char *primContNew = linphone_core_get_primary_contact(core._core);
+                        id_com = "PRIVMSG " + bot.user_nick + " :You are now as " + primContNew + "!\r\n";
                         bot.send_com(id_com);
                     }
                     else

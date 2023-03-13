@@ -16,6 +16,9 @@
  *
  * A cpp file including an address book database API
  * resource: https://www.tutorialspoint.com/sqlite/sqlite_c_cpp.htm
+ * 
+ * Author: David Kocman
+ * 
 */
 #include "addr_book.h"
 

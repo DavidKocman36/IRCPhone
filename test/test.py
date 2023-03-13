@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+# Author: David Kocman
+#
 
 # PREREQUISITES:
 #
@@ -30,7 +32,7 @@
 # Test cases:
 #   Connecting bot
 #   Regsiter and unregister -> optional
-#   Register with addr book -> also optional //
+#   Register with addr book -> also optional
 #   Call
 #   Call using addr book and enum
 #   Accept call
@@ -55,6 +57,7 @@ import select
 import signal
 from time import sleep
 
+# Class containing color definitions for colored output
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -70,9 +73,12 @@ class bcolors:
 maxNumber = 0
 # Number of overall tests
 maxNumberTests = 0
+# Number of current sceneario
 actualNumber = 1
+# Subprocess variables
 process = None
 sippProc = None
+# Counter of passed/faile tests
 testsPassed = 0
 testsFailed = 0
 
@@ -165,6 +171,7 @@ def test_bot_connect(server, channel, nick, s):
     global actualNumber
     global process
     print(bcolors.HEADER + "---------TEST [" + str(actualNumber) +"/" + str(maxNumber) + "]: Testing bot's connection---------" + bcolors.ENDC)
+    # Start a subprocess -> in this case, the sip irc bot
     process = subprocess.Popen("cd .. && make && ./irc_bot " + server + " " + channel + " " + nick + " none", shell=True, preexec_fn=os.setsid)
     aux = 0
     while True:

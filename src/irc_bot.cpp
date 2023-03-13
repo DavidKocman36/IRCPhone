@@ -13,6 +13,9 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Author: David Kocman 
+ *
  */
 
 #include "irc_bot.h"
@@ -170,6 +173,8 @@ void irc_bot::print_help(vector<string> messages)
             msg = "PRIVMSG " + user_nick + " :    status: prints your status (registered, current call, your uri)\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    -s <server> [-t <user> <passw>]: sets STUN/TURN server (-s) with its credentials (-t).\r\n";
+            send_init_com(msg);
+            msg = "PRIVMSG " + user_nick + " :    -sd: disables STUN/TURN option.\r\n";
             send_init_com(msg);
             msg = "PRIVMSG " + user_nick + " :    end: ends the bot. Also possible by CTRL+C in terminal.\r\n";
             send_com(msg);

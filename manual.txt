@@ -57,6 +57,9 @@ After the Hello! message you are able to use these commands. The bot shall ALWAY
 
     - example: -s stun.domain.com -t username password
 
+- -sd
+    - Disables STUN/TURN option.
+
 - end
     - Terminates the bot.
 

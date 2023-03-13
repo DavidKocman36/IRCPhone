@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+# Author: David Kocman
+#
 
 CC = g++
 CFLAGS  = -std=c++2a -g -w -I$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/include -L$(current_dir)/linphone-sdk/build/linphone-sdk/desktop/lib -llinphone -lbctoolbox -lresolv

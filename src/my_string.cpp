@@ -16,6 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * A cpp file containing all string methonds not present as a standard c++ feature
+ * Author: David Kocman
+ * 
 */
 
 #include "my_string.h"
