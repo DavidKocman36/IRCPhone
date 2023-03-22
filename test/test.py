@@ -27,12 +27,13 @@
 # Best one is irc.libera.chat 
 #
 # Launch: 
-# python3 test.py {server} {channel} [-r sip_identity sip_passw]
+# python3 test.py {server} {channel} [-r sip_identity sip_passw] [-s stun_server turn_username turn_password]
 #
 # Test cases:
 #   Connecting bot
 #   Regsiter and unregister -> optional
-#   Register with addr book -> also optional
+#   Register with addr book -> optional
+#   Set STUN/TURN -> optional
 #   Call
 #   Call using addr book and enum
 #   Accept call
@@ -56,6 +57,7 @@ import re
 import select
 import signal
 from time import sleep
+import argparse
 
 # Class containing color definitions for colored output
 class bcolors:
@@ -166,9 +168,15 @@ def test_loop_or(nick ,control_mess_1, control_mess_2 ,pass_mess, fail_mess, s):
             sleep(1)
             break
 
-# Tests the bot's connection to the server
+"""
+Testing the SIP bot's connection to the server
+"""
 def test_bot_connect(server, channel, nick, s):
     global actualNumber
+
+    global testsPassed
+    global testsFailed
+
     global process
     print(bcolors.HEADER + "---------TEST [" + str(actualNumber) +"/" + str(maxNumber) + "]: Testing bot's connection---------" + bcolors.ENDC)
     # Start a subprocess -> in this case, the sip irc bot
@@ -184,6 +192,7 @@ def test_bot_connect(server, channel, nick, s):
                 print(bcolors.FAIL + "TEST: Connecting bot FAILED: Timed out!" + bcolors.ENDC)
                 print("Aborting tests - bot is not present!")
                 os.killpg(os.getpgid(process.pid), signal.SIGINT)
+                testsFailed += 1
                 sys.exit(1)
             continue
 
@@ -192,6 +201,7 @@ def test_bot_connect(server, channel, nick, s):
         if re.search(r'(.*)PRIVMSG ' + nick + ' :Hello(.*)', result, re.MULTILINE):
             print(bcolors.OKGREEN + "TEST [" + str(actualNumber) +"/" + str(maxNumber) + "]: Connecting bot PASSED!" + bcolors.ENDC)
             actualNumber += 1
+            testsPassed += 1
             sleep(3)
             break
 
@@ -253,7 +263,9 @@ def test_register(identity, passw ,nick, s):
     print(bcolors.HEADER + "---------TEST [" + str(actualNumber) +"/" + str(maxNumber) + "]: Testing registration to proxy---------" + bcolors.ENDC)
     data = "PRIVMSG SIPTest_b :register " + identity + " " + passw + " \r\n"
     s.send(data.encode())
-    
+
+    sleep(1)
+          
     test_loop(nick, "Succesfully registered as " + identity + "!", "[" + str(actualNumber) +"/" + str(maxNumber) + "]: Registration", "Registration", s)
 
     sleep(2)
@@ -542,8 +554,9 @@ def test_multiple_inc_calls(nick, s):
     data = "PRIVMSG SIPTest_b :accept 2\r\n"
     s.send(data.encode())
 
-    test_loop(nick, "A call with (.*)127.0.0.1:5062(.*) is established!", "[" + str(actualNumber) +"/" + str(maxNumber) + "]: Second incoming call - Established", "Second incoming call - Established" ,  s)
-    sleep(2)
+    sleep(1)
+
+    test_loop(nick, "A call with (.*):5062(.*) is established!", "[" + str(actualNumber) +"/" + str(maxNumber) + "]: Second incoming call - Established", "Second incoming call - Established" ,  s)
 
     actualNumber += 1
 
@@ -561,37 +574,76 @@ def test_multiple_inc_calls(nick, s):
     if poll is None: # sippProc3 is still alive
         os.killpg(os.getpgid(sippProc3.pid), signal.SIGTERM)
 
+
+def test_stun_turn(stunServer, turnUser, turnPassw, nick, s):
+
+    print(bcolors.HEADER + "---------TEST [" + str(actualNumber) +"/" + str(maxNumber) + "]: Set STUN/TURN server---------" + bcolors.ENDC)
+
+    data = "PRIVMSG SIPTest_b :-s " + stunServer + "\r\n"
+    s.send(data.encode())
+    sleep(1)
+
+    test_loop(nick, "STUN enabled!", "[" + str(actualNumber) +"/" + str(maxNumber) + "]: Set STUN server", "Set STUN server", s)
+
+    sleep(2)
+
+    data = "PRIVMSG SIPTest_b :-s " + stunServer + " -t " + turnUser + " " + turnPassw + "\r\n"
+    s.send(data.encode())
+
+    sleep(1)
+
+    test_loop(nick, "STUN and TURN enabled!", "[" + str(actualNumber) +"/" + str(maxNumber) + "]: Enable STUN/TURN", "Enable STUN/TURN", s)
+
+    sleep(2)
+
+    data = "PRIVMSG SIPTest_b :-sd\r\n"
+    s.send(data.encode())
+
+    sleep(1)
+
+    test_loop(nick, "STUN/TURN disabled!", "[" + str(actualNumber) +"/" + str(maxNumber) + "]: Disable STUN/TURN", "Disable STUN/TURN", s)
+
+    sleep(1)
+
 """
 Main
 """
 def main_func():
 
-    n = len(sys.argv)
-    if n < 3:
-        print("ERROR: Wrong arguments! Usage: python3 test.py {server} {channel} [-r sip_identity sip_passw]")
-        return
+    parser = argparse.ArgumentParser()
+    parser.add_argument("server", help="Server to which the test bot and SIP bot connect")
+    parser.add_argument("channel", help="Channel to which test bot and SIP bot join")
 
-    server = sys.argv[1]
-    channel = sys.argv[2]
-    register = False
+    parser.add_argument("-r", type=str, nargs=2, help="SIP server proxy credentials")
+    parser.add_argument("-s", type=str, nargs=3, help="STUN/TURN server and credentials")
+    args = parser.parse_args()
+
+    server = args.server
+    channel = args.channel
+    register, nat = False, False
     identity, passw = None, None
+    stunServer, turnUser, turnPassw = None, None, None
     port = 6666
     nick = "SIPTest"
     global maxNumber
     global maxNumberTests
     maxNumber = 11
-    maxNumberTests = 31
-    # The registration tests are optional. A real proxy identity must be provided
-    if n > 3 and sys.argv[3] == "-r":
-        if n < 6:
-            print("ERROR: Wrong arguments! Usage: python3 test.py {local_ip} {server} {channel} [-r sip_identity sip_passw]")
-            return
+    maxNumberTests = 32
 
-        identity = sys.argv[4]
-        passw = sys.argv[5]
+    if args.r:
+        identity = args.r[0]
+        passw = args.r[1]
         register = True
         maxNumber += 2 
         maxNumberTests += 4
+
+    if args.s:
+        stunServer = args.s[0]
+        turnUser = args.s[1]
+        turnPassw = args.s[2]
+        nat = True
+        maxNumber += 1 
+        maxNumberTests += 3
     
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -634,9 +686,12 @@ def main_func():
     test_call_in_a_call(nick, s)
     test_multiple_inc_calls(nick, s)
 
-    if(register):
+    if register:
         test_register(identity, passw, nick, s)
         test_register_w_lookup(identity, passw, nick, s)
+
+    if nat:
+        test_stun_turn(stunServer, turnUser, turnPassw, nick, s)
 
     print(bcolors.HEADER + "\n-------------RESULTS-------------" + bcolors.ENDC)
     print("\nPassed: " + str(testsPassed))
