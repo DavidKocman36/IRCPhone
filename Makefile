@@ -28,8 +28,5 @@ current_dir = $(shell pwd)
 
 all: $(TARGET)
 
-run: 
-	./$(TARGET_OUT) irc.libera.chat Kocimistnost Koci password
-
 $(TARGET): $(TARGET).cpp
 	$(CC) $(TARGET).cpp -lsqlite3 $(OBJECT_FILES) $(CFLAGS) -o $(TARGET_OUT)
