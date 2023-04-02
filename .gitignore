@@ -1,9 +1,0 @@
-.vscode/
-linphone-sdk1/
-.gitingnore
-todo.txt
-conf/linphonerc
-conf/linphonerc_copy.txt
-db/addr_book.db
-notes.txt
-test/sipp-3.3
