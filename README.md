@@ -15,7 +15,9 @@ Features:
 
 # Installation and prerequisites
 
-Make sure to have ALL dependencies required by liblinphone.
+Make sure to have `build-essentials` installed and retrieve ALL dependencies required by liblinphone.
+The liblinphone is included as a git submodule within this project. If the submodule for some reaseon was not downloaded, follow the instructions below. To build the library, follow the steps 2 and 3.
+
 First you should get liblinphone-sdk from [here](https://www.linphone.org/technical-corner/liblinphone). Simply clone it and follow [instructions](https://gitlab.linphone.org/BC/public/linphone-sdk) on how to build it. Basically it is:
 
 1. Clone the repository `git clone https://gitlab.linphone.org/BC/public/linphone-sdk.git --recursive`
@@ -26,6 +28,8 @@ My used cmake commands are:
 
 `cmake -G "Ninja" -DLINPHONESDK_PLATFORM=Desktop -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_RELATIVE_PREFIX=YES -DENABLE_VIDEO=NO ..`
 
+After this command above is completed:
+
 `cmake --build . --parallel 9`
 
 NOTE: It is HIGHLY recommended, even mandatory, to add include and lib paths to g++ build. It is in Makefile but if you are not using mine, this tip might be helpful.
@@ -33,7 +37,7 @@ NOTE: It is HIGHLY recommended, even mandatory, to add include and lib paths to 
 Next, it is very important to make sure identity and cpim grammars are in /usr/share/belr/grammars folder (used for instant messages).
 
 Run these commands: `find /usr/share/belr/grammars/identity_grammar` and `find /usr/share/belr/grammars/cpim_grammar`
-If the grammars are not found then just copy these grammars from linphone-sdk.
+If the grammars are not found then just copy these grammars from linphone-sdk and create the folders if they are not yet created.
 
 `sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/identity_grammar /usr/share/belr/grammars/`
 `sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/cpim_grammar /usr/share/belr/grammars/`
