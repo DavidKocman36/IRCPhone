@@ -25,5 +25,5 @@ Structure of a folder should look like this:
 # Usage
 
 Launch the test script by:
-`python3 test.py {server} {channel} [-r {identity} {passw}]`
+`python3 test.py {server} {channel} [-r {identity} {passw}] [-s {stun_turn_server} {turn_username} {turn_password}]`
 The -r argument is optional and is used for proxy registration tests. Real proxy id must be provided for successfull tests.

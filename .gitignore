@@ -1,5 +1,6 @@
 .vscode/
-linphone-sdk/
+linphone-sdk1/
+.gitingnore
 todo.txt
 conf/linphonerc
 conf/linphonerc_copy.txt

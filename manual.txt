@@ -14,7 +14,7 @@ After the Hello! message you are able to use these commands. The bot shall ALWAY
 
 - register {-a <name>} | {<uri> <password>}
     - Registers at a proxy with provided uri and password. You are also able to register with uri and password
-      stored at the database using -a and unique <name>.
+      stored in the database using -a and unique <name>.
 
     - example: register sip:username@domain password or register -a joe
 
@@ -24,13 +24,13 @@ After the Hello! message you are able to use these commands. The bot shall ALWAY
 - call {-a <name>} | {-e <number>} | {<uri>}
     - Initiates a call to <uri>. If you have the person stored in your contacts you might use -a <name>.
     - Also you are able to make peer-to-peer calls with sip:username@ip-address
-    - The ENUM lookup is also available with argument -e. Just type the phone number.
+    - The ENUM lookup is also available with argument -e. Just type the phone number in an E.164 format.
 
     -example: call sip:username@domain or call -a john or call -e +431123456789
 
 - accept {<number>}
     - User is informed if an incoming call comes. User then might accept this call by typing accept <number> where
-      <number> is the order of the call in which the call comes. The order is diplayed to the user. All other active incoming
+      <number> is the order of the call in which the call comes. The order is displayed to the user. All other active incoming
       calls are declined.
 
 - decline
@@ -89,7 +89,7 @@ NOTE: Bot can also be terminated by CTRL+C in terminal.
 
 Address book commands are ubiquitous and their role is to manage your contacts or proxy identities.
 The database is open since the bot's launch on server.
-NOTE: All <name> attributes ARE unique within the database!
+NOTE: All <name> attributes ARE unique within each table!
 
 - -dropdb
     - Drops the tables.
@@ -133,7 +133,7 @@ Also the user is able to browse its contacts/identities:
 
 - next [<number>]
     - While in browsing mode you can turn to next page by typing this command. You can skip a certain
-      number of pages by providing a <number>. By default its 1.
+      number of pages by providing a <number>. By default it is 1.
 
 - prev [<number>]
     - Turns to previous page. <number> argument has the same rules as in "next" command.

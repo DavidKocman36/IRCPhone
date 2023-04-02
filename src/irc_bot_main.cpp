@@ -67,6 +67,7 @@ int main(int argc, char *argv[]){
     bot.server = argv[1];
     bot.channel = argv[2];
 
+    /* If channel does not have '#' in the beginning, then it is added here */
     if(bot.channel[0] != '#')
     {
         bot.channel = "#" + bot.channel;
@@ -128,6 +129,7 @@ int main(int argc, char *argv[]){
     bot.send_init_com(nick_com);
     bot.send_init_com(user_com);
     
+    /* Send the welcome message */
     string hello_com = "PRIVMSG " + bot.user_nick + " :Hello!\r\n";
     bot.send_init_com(hello_com);
     string id_com = "PRIVMSG " + bot.user_nick + " :You are now as " + primCont + "!\r\n";

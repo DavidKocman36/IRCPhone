@@ -37,7 +37,7 @@ int irc_bot_call::call_invite(LinphoneCore *lc ,string uri)
     {
         return 1;
     }
-    //Get a reference of the call if we want to work with if later
+    //Get a reference of the call if we want to work with it later
     linphone_call_ref(this->_call);
     return 0;
 }

@@ -128,7 +128,7 @@ void text_received(LinphoneCore *lc, LinphoneChatRoom *room, LinphoneChatMessage
 void irc_bot_core::create_nat_policy()
 {
     this->_nat = linphone_core_create_nat_policy(this->_core);
-    linphone_core_enable_ipv6(this->_core, false);
+    linphone_core_enable_ipv6(this->_core, true);
     linphone_core_enable_keep_alive(this->_core, true);
     linphone_core_set_nat_policy(this->_core, this->_nat);
 }

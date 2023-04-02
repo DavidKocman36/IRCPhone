@@ -618,7 +618,7 @@ void irc_bot::call_loop(irc_bot_call &call, irc_bot_core &core, irc_bot_message 
             break;
         }
         /* Get the current call. Useful when having more than one call. */
-        /* If the call shall be still active, then it is present in calls vector */
+        /* If the call shall still be active, then it is present in calls vector */
         /* If not, the loop is immediately terminated */
         if(!callsVector.empty())
         {

@@ -38,15 +38,6 @@ using namespace std;
 void split(const string& str, const string& delim, vector<string>& parts);
 
 /**
- * Function for replacing all occurences of a string in a string.
- * 
- * @param data The input string
- * @param toSearch String or character to search and replace
- * @param replaceStr String to replace the searched string withs.
-*/
-void findAndReplaceAll(string & data, string toSearch, string replaceStr);
-
-/**
  * Function for determining whether a string is a number or not.
  * 
  * @param str Input string

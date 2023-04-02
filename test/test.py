@@ -610,6 +610,7 @@ Main
 """
 def main_func():
 
+    # Parse the command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("server", help="Server to which the test bot and SIP bot connect")
     parser.add_argument("channel", help="Channel to which test bot and SIP bot join")
@@ -713,7 +714,6 @@ def main_func():
     print("Test bot is disconnecting!")
     quit_data = "QUIT\r\n"
     s.send(quit_data.encode())
-    
     
 
 if __name__ == "__main__":
