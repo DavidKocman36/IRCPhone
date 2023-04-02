@@ -1,0 +1,1 @@
+This folder is meant for storing the local database - the Address book.
