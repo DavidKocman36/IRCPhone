@@ -15,6 +15,12 @@ Features:
 
 # Installation and prerequisites
 
+TL:DR prerequisites to download for this program:
+1. build-essentials
+2. liblinphone10
+3. libsqlite3-dev
+4. all liblinphone [dependencies](https://gitlab.linphone.org/BC/public/linphone-sdk)
+
 Make sure to have `build-essentials` installed and retrieve ALL dependencies required by liblinphone.
 The liblinphone is included as a git submodule within this project. If the submodule for some reaseon was not downloaded, follow the instructions below. To build the library, follow the steps 2 and 3.
 
