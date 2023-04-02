@@ -59,7 +59,8 @@ After building of linphone-sdk is successfull and you have all dependencies, run
 Launch with
 `./irc_bot {server} {channel} {user} {password}` 
 
-If core on startup fails to open the Linphone.db database just create the folder mentioned by the error message. The core's database will be stored in this folder then. 
+If core on startup fails to open the Linphone.db database just create the `linphone` folder mentioned by the error message. The core's database will be stored in this folder then. The path shall be:
+`/home/user/.local/share/linphone`
 
 Structure of a folder should look like this:
 ```
