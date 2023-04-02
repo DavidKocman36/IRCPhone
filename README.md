@@ -2,7 +2,7 @@
 
 This is the bachelors thesis of SIP integration into IRC client. Made by David Kocman at BUT FIT.
 
-The IRCPhone is a SIP User agent based on open source SIP library liblinphone using IRC as its GUI, launched from command prompt. It is an IRC bot that lingers in a channel and listens to user's commands.
+The IRCPhone is a SIP User agent based on open source SIP library liblinphone using IRC client as its GUI, launched from a command prompt. It is an IRC bot that lingers in a channel and listens to user's commands, which control the bot.
 
 Features:
 - Voice calls
@@ -12,6 +12,8 @@ Features:
 - Address book for storing contacts and proxy identities
 - Easy to use commands
 - All basic SIP features
+
+
 
 # Installation and prerequisites
 
@@ -57,7 +59,8 @@ After building of linphone-sdk is successfull and you have all dependencies, run
 Launch with
 `./irc_bot {server} {channel} {user} {password}` 
 
-If core on startup fails to open the Linphone.db database just create the folder mentioned by the error message. The core's database will be stored in this folder then. 
+If core on startup fails to open the Linphone.db database just create the `linphone` folder mentioned by the error message. The core's database will be stored in this folder then. The path shall be:
+`/home/user/.local/share/linphone`
 
 Structure of a folder should look like this:
 ```
