@@ -2,7 +2,7 @@
 
 This is the bachelors thesis of SIP integration into IRC client. Made by David Kocman at BUT FIT.
 
-The IRCPhone is a SIP User agent based on open source SIP library liblinphone using IRC as its GUI, launched from command prompt. It is an IRC bot that lingers in a channel and listens to user's commands.
+The IRCPhone is a SIP User agent based on open source SIP library liblinphone using IRC client as its GUI, launched from a command prompt. It is an IRC bot that lingers in a channel and listens to user's commands, which control the bot.
 
 Features:
 - Voice calls
@@ -12,6 +12,8 @@ Features:
 - Address book for storing contacts and proxy identities
 - Easy to use commands
 - All basic SIP features
+
+
 
 # Installation and prerequisites
 
