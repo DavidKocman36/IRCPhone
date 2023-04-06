@@ -586,6 +586,7 @@ string addr_book::get_enum_uri(vector<string> messages)
         }   
         if (ns_rr_type(rr)==ns_t_naptr)
         {
+            // retrieve the rdata
             memcpy(&res, ns_rr_rdata(rr) + 11, sizeof(res));
             aux = string(res);
             if (aux.find("sip") != string::npos) {
@@ -605,20 +606,9 @@ string addr_book::get_enum_uri(vector<string> messages)
     /* Erase a redundant part of the response */
     regexes.erase(regexes.begin());
 
-    FILE *fp;
-    char path[1024];
-    /* Execute a regex substitution */
-    string comm_str = "echo \"" + number + "\" | sed -E 's/" + regexes[0] + "/" + regexes[1] + "/g'";
-    const char* comm_sed = comm_str.c_str();
-    fp = popen(comm_sed, "r");
-    if (fp == NULL)
-        return "";
-
-    while (fgets(path, 1024, fp) != NULL)
-        uri += string(path);
-
-    uri.erase(uri.length()-1);
-    pclose(fp);
+    /* Substitute the regex with C++ regex library */
+    regex re(regexes[0], regex_constants::extended);
+    uri = regex_replace(number, re, regexes[1], regex_constants::match_default | regex_constants::format_sed);
 
     return uri;
 }

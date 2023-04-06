@@ -22,11 +22,13 @@ TL:DR prerequisites to download for this program:
 2. liblinphone10
 3. libsqlite3-dev
 4. all liblinphone [dependencies](https://gitlab.linphone.org/BC/public/linphone-sdk)
+You may use the provided bash script to retrieve dependencies 2 and 3. Just run `chmod u+x ./packages.sh` if the script is not executable, then launch it with `sudo ./packages.sh`.
 
-Make sure to have `build-essentials` installed and retrieve ALL dependencies required by liblinphone.
+## Liblinphone build
+
 The liblinphone is included as a git submodule within this project. If the submodule for some reaseon was not downloaded, follow the instructions below. To build the library, follow the steps 2 and 3.
 
-First you should get liblinphone-sdk from [here](https://www.linphone.org/technical-corner/liblinphone). Simply clone it and follow [instructions](https://gitlab.linphone.org/BC/public/linphone-sdk) on how to build it. Basically it is:
+You should get liblinphone-sdk from [here](https://www.linphone.org/technical-corner/liblinphone). Simply clone it and follow [instructions](https://gitlab.linphone.org/BC/public/linphone-sdk) on how to build it. Basically it is:
 
 1. Clone the repository `git clone https://gitlab.linphone.org/BC/public/linphone-sdk.git --recursive`
 2. Go to linphone-sdk folder and make a 'build' folder (`mkdir build`)
@@ -40,27 +42,31 @@ After this command above is completed:
 
 `cmake --build . --parallel 9`
 
-NOTE: It is HIGHLY recommended, even mandatory, to add include and lib paths to g++ build. It is in Makefile but if you are not using mine, this tip might be helpful.
+## Building the program
+
+After building the library, run `sudo ./packages.sh` to retrieve all dependencies this project requires.
+To make it manually, you may use:
+
+`sudo apt-get install liblinphone10`
+
+`sudo apt-get install libsqlite3-dev`.
 
 Next, it is very important to make sure identity and cpim grammars are in /usr/share/belr/grammars folder (used for instant messages).
 
-Run these commands: `find /usr/share/belr/grammars/identity_grammar` and `find /usr/share/belr/grammars/cpim_grammar`
+Run these commands: `find /usr/share/belr/grammars/identity_grammar`, `find /usr/share/belr/grammars/cpim_grammar` and `find /usr/share/belr/grammars/vcard_grammar`
 If the grammars are not found then just copy these grammars from linphone-sdk and create the folders if they are not yet created.
 
 `sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/identity_grammar /usr/share/belr/grammars/`
+
 `sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/cpim_grammar /usr/share/belr/grammars/`
 
-Just before launch, run `sudo apt-get install liblinphone10` to download the remaining dependencies and shared objects.
+`sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/vcard_grammar /usr/share/belr/grammars/`
 
-Last but not least, make sure you have sqlite3 on your system.
-If not just run `sudo apt-get install libsqlite3-dev`.
+It is also crucial to check, whether the `share` folder in `$HOME/.local/share/linphone` is present. If not, the program exits at the startup because linphone database could not be stored anywhere.
 
-After building of linphone-sdk is successfull and you have all dependencies, run "make" command to compile IRCPhone. 
-Launch with
+After all of the steps above are completed, you may launch the program with:
 `./irc_bot {server} {channel} {user} {password}` 
-
-If core on startup fails to open the Linphone.db database just create the `linphone` folder mentioned by the error message. The core's database will be stored in this folder then. The path shall be:
-`/home/user/.local/share/linphone`
+For the meaning of each argument, please refer to `manual.txt`.
 
 Structure of a folder should look like this:
 ```
@@ -76,13 +82,10 @@ Structure of a folder should look like this:
 
 # Usage
 
-See manual.txt.
+See `manual.txt`.
 
 # Tests
 
 For automated tests a tool called SIPp is used for SIP traffic generation.
 
 More in test/README.md
-
-# Known issues
-

@@ -12,6 +12,17 @@ Launching in terminal:
 
 After the Hello! message you are able to use these commands. The bot shall ALWAYS give the user feedback in a form of a short message.
 
+The commands are sent in a form of an IRC private message. After the bot sends a welcome message, a new chat window shall open.
+To communicate, just type
+
+    <command> <arguments>
+
+For communicating outside of the chat window, use
+
+    /msg nick_b <command> <arguments>
+
+Below is the list of all available commands:
+
 - register {-a <name>} | {<uri> <password>}
     - Registers at a proxy with provided uri and password. You are also able to register with uri and password
       stored in the database using -a and unique <name>.
