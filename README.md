@@ -22,6 +22,7 @@ TL:DR prerequisites to download for this program:
 2. liblinphone10
 3. libsqlite3-dev
 4. all liblinphone [dependencies](https://gitlab.linphone.org/BC/public/linphone-sdk)
+
 You may use the provided bash script to retrieve dependencies 2 and 3. Just run `chmod u+x ./packages.sh` if the script is not executable, then launch it with `sudo ./packages.sh`.
 
 ## Liblinphone build
