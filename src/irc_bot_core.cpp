@@ -31,7 +31,7 @@ irc_bot_core::~irc_bot_core()
 }
 
 /* Global variables explained in header file */
-/* The reason they are global is because the callback isn't a member function of irc_bot_core */
+/* The reason they are global is because the callback is not a member function of irc_bot_core */
 string incomingCallMessage;
 string incomingChatMessage;
 string remoteHungUp;
@@ -152,6 +152,7 @@ void irc_bot_core::enable_turn(string &user, string &passw)
 
 int irc_bot_core::core_create()
 {
+    /* Create core. */
     this->_core = linphone_factory_create_core_3(this->_factory, nullptr, nullptr, nullptr);
     if(this->_core == nullptr)
     {
@@ -159,6 +160,8 @@ int irc_bot_core::core_create()
         return 1;
     }
     int err;
+    /* Start the core. A 'linphone' folder must be present in $HOME/.local/share/ folder. 
+    This folder then contains the linphone core database.*/
     if((err = linphone_core_start(this->_core)) != 0){
         cout << "An error starting core occured! Error number: " << err << endl;
         return 1;

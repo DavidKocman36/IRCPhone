@@ -44,6 +44,7 @@ int main(int argc, char *argv[]){
     }
     signal(SIGINT, stop);
 
+    /* Create the core */
     int coreErr = core.core_create();
     if(coreErr)
     {
@@ -84,6 +85,7 @@ int main(int argc, char *argv[]){
         exit(1); 
     }
 
+    /* Create a socked descriptor. */
     bot.sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(bot.sockfd < 0)
     {
@@ -103,6 +105,7 @@ int main(int argc, char *argv[]){
     struct sockaddr_in irc_server;
     irc_server.sin_family = AF_INET;
     irc_server.sin_port = htons(6666);
+    /* Retrieve the resolved IP address. */
     memcpy(&irc_server.sin_addr, he->h_addr_list[0], he->h_length);
 
     int conn = connect(bot.sockfd, (sockaddr*)&irc_server, sizeof(irc_server));
@@ -198,6 +201,7 @@ int main(int argc, char *argv[]){
                 messages.clear();
                 memset(buffer, 0, sizeof(buffer));
             }
+            /* Parse the private messages. */
             if(messages[1] == "PRIVMSG")
             {
                 vector<string> aux;
@@ -239,6 +243,7 @@ int main(int argc, char *argv[]){
                                 bot.send_com(msg);
                                 continue;
                             }
+                            /* Enable TURN support */
                             string user = messages[6];
                             string passw = messages[7];
                             core.enable_turn(user, passw);   
@@ -273,6 +278,7 @@ int main(int argc, char *argv[]){
                             bot.send_com(msg);
                             continue;
                         }
+                        /* Retrieve the URI corresponding to the given name */
                         if(!addrBook.addr_book_get_contact(messages[5]))
                         {
                             uri = addrBook.contactUri;
@@ -408,6 +414,7 @@ int main(int argc, char *argv[]){
                         continue;
                     }
                     
+                    /* Begin the unregistration. */
                     proxy.bot_unregister(core._core);
                     bot.sipUsername.clear();
                     while((linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationFailed) && (linphone_proxy_config_get_state(proxy.proxy_cfg) !=  LinphoneRegistrationCleared)){
@@ -463,6 +470,7 @@ int main(int argc, char *argv[]){
                 }
                 else if(command == ":decline")
                 {
+                    /* Decline an incoming call. */
                     bot.decline_func();
                 }
                 else{
@@ -483,6 +491,7 @@ int main(int argc, char *argv[]){
                         addrBook.addr_book_get_data(messages, Registrar);
                         bot.addr_book_print(messages, addrBook, core);
                     }
+                    /* Unknown command or wrong format. */
                     else
                     {
                         string msg = "PRIVMSG " + bot.user_nick + " :Unknown command! Use \"help\" for some guidance.\r\n";

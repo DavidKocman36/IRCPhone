@@ -30,7 +30,7 @@ void irc_bot::send_com(string command)
 {
     string auxMsg = "PRIVMSG " + user_nick + " : \r\n";
     send(sockfd, command.c_str(), command.size(), 0);
-    /* The empty lina */
+    /* The empty line */
     send(sockfd, auxMsg.c_str(), auxMsg.size(), 0);
 }
 
@@ -76,6 +76,7 @@ void irc_bot::print_status(irc_bot_core *core, irc_bot_proxy *proxy)
 {
     string msg;
     /* If registered */
+    /* Sends whether registered and current URI. */
     if(proxy->proxy_cfg == nullptr)
     {
         msg = "PRIVMSG " + user_nick + " :Not registered!\r\n";
@@ -296,6 +297,7 @@ void irc_bot::decline_func()
     {
         int ret;
         ret = decline();
+        /* Send just confirmation message. */
         if(ret == 0)
         {
             msg = "PRIVMSG " + user_nick + " :Declined all calls!\r\n";
@@ -355,6 +357,7 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
         msg.resize(msg.length() - 2);
         split(msg, " ", messages);
 
+        /* Sen PONG response. */
         std::vector<std::string>::iterator in;
         if((in = std::find(messages.begin(), messages.end(), "PING")) != messages.end())
         {
@@ -364,6 +367,7 @@ int irc_bot::check_messages_during_call(irc_bot_call &call, irc_bot_core &core, 
             messages.clear();
             memset(buffer, 0, sizeof(buffer));
         }
+        /* Parse the private message */
         if(messages[1] == "PRIVMSG")
         {
             vector<string> aux;
@@ -573,6 +577,7 @@ void irc_bot::call_loop(irc_bot_call &call, irc_bot_core &core, irc_bot_message 
     string msg;
     irc_bot_call auxCall = call;
 
+    /* While the call is running. Second layer of security if something happens. */
     while (!(linphone_call_get_state(call._call) == LinphoneCallStateReleased) && !(linphone_call_get_state(call._call) == LinphoneCallStateError))
     {
         core.iterate();
@@ -744,6 +749,7 @@ void irc_bot::accept(vector <string>messages, irc_bot_call &call, irc_bot_core &
         return;
     }
 
+    /* Make the call not ringing anymore. */
     incomingCallsVector[index].status = 0;
     incomingCall = incCall.call;
     if(incomingCall == nullptr)
@@ -800,11 +806,13 @@ int irc_bot::print(int n, int x, int &i, int pact, int pmax, addr_book addrBook)
 {
     string msg;
     Data data;
+    /* Print the corresponding range of entries. */
     for(i = n; i < x; i++)
     {
         data = addrBook.dbData.at(i);
         msg = "PRIVMSG " + user_nick + " :" + data.name + " - " + data.uri + "\r\n";
         send_init_com(msg);
+        /* Sleep 250 ms after each row for not flooding the bot */
         usleep(250000);
     }
     msg = "PRIVMSG " + user_nick + " :---------- Page " + to_string(pact) +"/" + to_string(pmax) + " ----------\r\n";

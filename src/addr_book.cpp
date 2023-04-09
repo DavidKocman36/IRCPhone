@@ -23,11 +23,14 @@
 #include "addr_book.h"
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
+    /* Called each time after a statement is successfully executed.
+    Not used, but needed. */
     return 0;
 }
 
 addr_book::addr_book()
 {
+    /* Initialization of the response message. It shall be always overwritten.  */
     this->dbMessage = "Something went wrong, this message is not meant to be seen :/";
 }
 
@@ -37,6 +40,7 @@ addr_book::~addr_book()
 
 int addr_book::addr_book_open()
 {
+    /* Open the database handle. The file shal be created when it does not exist. */
     return sqlite3_open("db/addr_book.db", &(this->db));
 }
 
@@ -53,6 +57,7 @@ int addr_book::addr_book_check(string &name, Option opt)
     struct sqlite3_stmt *selectstmt;
     int result;
 
+    /* Retrieve the appropriate data based on the option passed. */
     if(opt == Contact)
     {
         sql_str = "SELECT * from CONTACTS WHERE NAME='" + name + "'";
@@ -178,9 +183,10 @@ int addr_book::addr_book_insert(string &name, string &uri, string &passw, Option
     char *zErrMsg = 0;
     string sql_str;
 
-    /* Based on what kind of data we want to insert the SELECT statement is modified. */
+    /* Based on what kind of data we want to insert, the SELECT statement is modified. */
     if(opt == Contact)
     {
+        /* Do not insert if a record with the same name already exists. */
         if(this->addr_book_check(name, Contact))
         {
             this->dbMessage = "Contact already exists!";
@@ -320,12 +326,14 @@ int addr_book::addr_book_get_contact(string &name)
     struct sqlite3_stmt *selectstmt;
     char *zErrMsg = 0;
 
+    /* Check, whether the contact does exist. */
     if(!this->addr_book_check(name, Contact))
     {
         this->dbMessage = "Contact doesnt exist!";
         return 1;
     }
 
+    /* Construct the select statement. */
     sql_str = "SELECT URI from CONTACTS where NAME='" + name + "';";
     const char *sql = sql_str.c_str();
 
@@ -477,6 +485,7 @@ int addr_book::addr_book_iterate(string &command, vector<string> messages)
 
 int addr_book::addr_book_get_data(vector<string> messages, Option opt)
 {
+    /* This function returns data for browsing the db. */
     string sql_str;
     struct sqlite3_stmt *selectstmt;
     char *zErrMsg = 0;
