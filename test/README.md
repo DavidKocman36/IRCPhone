@@ -12,6 +12,7 @@ Make sure to have python 3.9+ installed.
 2. run `tar -xvzf sipp-xxx.tar.gz` to unpack
 3. make pcapplay_ossl
 
+The recommended version is sipp-3.3. If other version is used, the folder's name must be sipp-3.3.
 Structure of a folder should look like this:
 ```
 ├── sipp-3.3
@@ -24,6 +25,9 @@ Structure of a folder should look like this:
 ```
 # Usage
 
+It is HIGHLY recommended to run the tests AFTER building the program. The binary shall be already built and present.
+
 Launch the test script by:
 `python3 test.py {server} {channel} [-r {identity} {passw}] [-s {stun_turn_server} {turn_username} {turn_password}]`
 The -r argument is optional and is used for proxy registration tests. Real proxy id must be provided for successfull tests.
+The -s argument is also optional and is used to test NAT traversal settings. Again, real STUN/TURN server and TURN credential must be provided.

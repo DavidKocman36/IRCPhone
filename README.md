@@ -23,7 +23,7 @@ TL:DR prerequisites to download for this program:
 3. libsqlite3-dev
 4. all liblinphone [dependencies](https://gitlab.linphone.org/BC/public/linphone-sdk)
 
-You may use the provided bash script to retrieve dependencies 2 and 3. Just run `chmod u+x ./packages.sh` if the script is not executable, then launch it with `sudo ./packages.sh`.
+You may use the provided bash script to retrieve dependencies 2 and 3. Just run `chmod u+x ./packages.sh` if the script is not executable, then launch it with `sudo ./packages.sh`, but the library must be built first.
 
 ## Liblinphone build
 
@@ -52,7 +52,9 @@ To make it manually, you may use:
 
 `sudo apt-get install libsqlite3-dev`.
 
-Next, it is very important to make sure identity and cpim grammars are in /usr/share/belr/grammars folder (used for instant messages).
+It may be needed to make the script executable first.
+
+Next, it is very important to make sure identity, cpim and vcard grammars are in `/usr/share/belr/grammars` folder (used for instant messages).
 
 Run these commands: `find /usr/share/belr/grammars/identity_grammar`, `find /usr/share/belr/grammars/cpim_grammar` and `find /usr/share/belr/grammars/vcard_grammar`
 If the grammars are not found then just copy these grammars from linphone-sdk and create the folders if they are not yet created.
@@ -65,11 +67,21 @@ If the grammars are not found then just copy these grammars from linphone-sdk an
 
 It is also crucial to check, whether the `share` folder in `$HOME/.local/share/linphone` is present. If not, the program exits at the startup because linphone database could not be stored anywhere.
 
+Last step is to build the executable.
+For this, the `build.sh` script is used. This script runs autotools and is launched as follows:
+
+`./build.sh`
+
+Make sure to have files `configure.ac`, `makefile.am` and `src/makefile.am` present.
+Just like the `packages.sh`, this script might also be needed to be made executable.
+
+`chmod u+x ./build.sh`
+
 After all of the steps above are completed, you may launch the program with:
 `./irc_bot {server} {channel} {user} {password}` 
 For the meaning of each argument, please refer to `manual.txt`.
 
-Structure of a folder should look like this:
+Structure of the root folder should look like this:
 ```
 ├── db
 ├── linphone-sdk
