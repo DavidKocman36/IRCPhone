@@ -92,6 +92,7 @@ Structure of the root folder should look like this:
 ├── irc_bot
 └── Makefile
 ```
+... and also other important scripts and files.
 
 # Usage
 
