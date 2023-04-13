@@ -102,7 +102,8 @@ static void call_state_changed(LinphoneCore *lc, LinphoneCall *call, LinphoneCal
             }
             //remote hung up message
             from = linphone_call_get_remote_address(call);
-            remoteHungUp = "A call from " + string(linphone_address_as_string(from)) + " is terminated!";
+            remoteHungUp =
+             "A call from " + string(linphone_address_as_string(from)) + " is terminated!";
             break;
         case LinphoneCallStateReleased:
 		    break;
@@ -133,12 +134,20 @@ void irc_bot_core::create_nat_policy()
     linphone_core_set_nat_policy(this->_core, this->_nat);
 }
 
-void irc_bot_core::enable_stun(string &address)
+int irc_bot_core::enable_stun(string &address)
 {
     linphone_nat_policy_enable_ice(this->_nat, true);
     linphone_nat_policy_enable_stun(this->_nat, true);
     linphone_nat_policy_set_stun_server(this->_nat, address.c_str());
-    linphone_core_set_nat_policy(this->_core, this->_nat);   
+    const struct addrinfo *stun_s = linphone_nat_policy_get_stun_server_addrinfo(this->_nat);
+    if(stun_s == nullptr)
+    {
+        linphone_nat_policy_enable_ice(this->_nat, false);
+        linphone_nat_policy_enable_stun(this->_nat, false);
+        return 1;
+    }
+    linphone_core_set_nat_policy(this->_core, this->_nat);  
+    return 0; 
 }
 
 void irc_bot_core::enable_turn(string &user, string &passw)

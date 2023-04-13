@@ -24,6 +24,7 @@
 #include <linphone/linphonecore.h>
 #include <algorithm>
 #include <vector>
+#include <netdb.h>
 #include "irc_bot_call.h"
 
 using namespace std;
@@ -94,8 +95,10 @@ public:
      * Function that enables ICE and STUN.
      * 
      * @param address The address of the STUN/TURN server
+     * 
+     * @returns 1 on failure (non-valid server), 0 on success
     */
-    void enable_stun(string &address);
+    int enable_stun(string &address);
 
     /**
      * Function that enables TURN. Also authenticates the TURN user.

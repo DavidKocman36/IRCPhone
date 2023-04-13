@@ -232,7 +232,14 @@ int main(int argc, char *argv[]){
                         continue;
                     }
                     string address = messages[4];
-                    core.enable_stun(address);
+                    /* Check for the validity of the server address */
+                    if(core.enable_stun(address))
+                    {
+                        msg = "PRIVMSG " + bot.user_nick + " :Wrong server address!\r\n";
+                        bot.send_com(msg);
+                        continue;
+                    }
+
                     if(messages.size() > 5)
                     {
                         if(messages[5] == "-t")
