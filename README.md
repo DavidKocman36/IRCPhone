@@ -65,7 +65,7 @@ If the grammars are not found then just copy these grammars from linphone-sdk an
 
 `sudo cp linphone-sdk/build/linphone-sdk/desktop/share/belr/grammars/vcard_grammar /usr/share/belr/grammars/`
 
-It is also crucial to check, whether the `share` folder in `$HOME/.local/share/linphone` is present. If not, the program exits at the startup because linphone database could not be stored anywhere.
+It is also crucial to check, whether the `linphone` folder in `$HOME/.local/share/` is present. If not, the program exits at the startup because linphone database could not be stored anywhere. Simply create it.
 
 Last step is to build the executable.
 For this, the `build.sh` script is used. This script runs autotools and is launched as follows:

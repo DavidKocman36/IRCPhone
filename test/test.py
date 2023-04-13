@@ -180,10 +180,10 @@ def test_bot_connect(server, channel, nick, s):
     global process
     print(bcolors.HEADER + "---------TEST [" + str(actualNumber) +"/" + str(maxNumber) + "]: Testing bot's connection---------" + bcolors.ENDC)
     # Start a subprocess -> in this case, the sip irc bot
-    process = subprocess.Popen("cd .. && make && ./irc_bot " + server + " " + channel + " " + nick + " none", shell=True, preexec_fn=os.setsid)
+    process = subprocess.Popen("cd .. && ./irc_bot " + server + " " + channel + " " + nick + " none", shell=True, preexec_fn=os.setsid)
     aux = 0
     while True:
-        # Wait for one minute before failing. All of this because of makefile.
+        # Wait for one minute before failing.
         try:
             result = recv_timeout(s, 1024)
         except TimeoutError:
@@ -261,10 +261,11 @@ Testing registration to proxy
 def test_register(identity, passw ,nick, s):
     global actualNumber
     print(bcolors.HEADER + "---------TEST [" + str(actualNumber) +"/" + str(maxNumber) + "]: Testing registration to proxy---------" + bcolors.ENDC)
+    sleep(1)
     data = "PRIVMSG SIPTest_b :register " + identity + " " + passw + " \r\n"
     s.send(data.encode())
 
-    sleep(1)
+    sleep(2)
           
     test_loop(nick, "Succesfully registered as " + identity + "!", "[" + str(actualNumber) +"/" + str(maxNumber) + "]: Registration", "Registration", s)
 
@@ -574,6 +575,8 @@ def test_multiple_inc_calls(nick, s):
     if poll is None: # sippProc3 is still alive
         os.killpg(os.getpgid(sippProc3.pid), signal.SIGTERM)
 
+    sleep(1)
+
 
 def test_stun_turn(stunServer, turnUser, turnPassw, nick, s):
 
@@ -686,6 +689,17 @@ def main_func():
     test_message(nick, s)
     test_call_in_a_call(nick, s)
     test_multiple_inc_calls(nick, s)
+
+    # clear all other remaining messages
+    aux_num = 0
+    while True:
+        try:
+            result = recv_timeout(s, 1024)
+        except TimeoutError:
+            aux_num += 1
+            if aux_num == 2:
+                break
+            continue
 
     if register:
         test_register(identity, passw, nick, s)

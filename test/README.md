@@ -25,7 +25,7 @@ Structure of a folder should look like this:
 ```
 # Usage
 
-It is HIGHLY recommended to run the tests AFTER building the program. The binary shall be already built and present.
+It is MANDATORY to run the tests AFTER building the program. The binary shall be already built and present.
 
 Launch the test script by:
 `python3 test.py {server} {channel} [-r {identity} {passw}] [-s {stun_turn_server} {turn_username} {turn_password}]`
