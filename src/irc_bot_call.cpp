@@ -29,6 +29,7 @@ irc_bot_call::~irc_bot_call()
 {
 }
 
+// Inspired by: https://download.linphone.org/releases/docs/liblinphone/latest/c/group__basic__call__tutorials.html
 int irc_bot_call::call_invite(LinphoneCore *lc ,string uri)
 {
     //Initiate the call

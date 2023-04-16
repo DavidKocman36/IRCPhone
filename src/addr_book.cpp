@@ -576,7 +576,7 @@ string addr_book::get_enum_uri(vector<string> messages)
     }
     
     //https://www.rfc-editor.org/rfc/rfc2915#page-3
-    //https://docstore.mik.ua/orelly/networking_2ndEd/dns/ch15_02.htm
+    //Methods are drawn from: https://docstore.mik.ua/orelly/networking_2ndEd/dns/ch15_02.htm
 
     ns_rr rr;
     int rrnum;

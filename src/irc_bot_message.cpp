@@ -28,12 +28,14 @@ irc_bot_message::~irc_bot_message()
 {
 }
 
+// Inspired by: https://download.linphone.org/releases/docs/liblinphone/latest/c/group__real__time__text.html
 void irc_bot_message::create_call_chat_room(LinphoneCall *call)
 {
     //Create call chat room
     this->chat_room=linphone_call_get_chat_room(call);
 }
 
+// Inspired by: https://download.linphone.org/releases/docs/liblinphone/latest/c/group__chatroom__tuto.html
 void irc_bot_message::create_chat_room(LinphoneCore *lc, string &uri)
 {
     //create the chat room with given uri

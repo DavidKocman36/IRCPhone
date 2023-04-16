@@ -42,6 +42,7 @@ void irc_bot_proxy::set_credentials(string &user, string &passw)
     this->passw = passw.c_str();
 }
 
+// Drawn from: https://download.linphone.org/releases/docs/liblinphone/latest/c/group__registration__tutorials.html
 int irc_bot_proxy::bot_register(LinphoneCore *lc)
 {
     /*create proxy config*/
